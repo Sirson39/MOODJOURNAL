@@ -1,0 +1,79 @@
+@page "/settings"
+
+<div class="header">
+    <div class="title">
+        <h2>Settings</h2>
+        <p>Security (PIN), theme, export options (UI now — backend later).</p>
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <h3>Theme</h3>
+        <div class="sub">Light/Dark customization (hook toggle later).</div>
+        <div class="divider"></div>
+
+        <div class="actions" style="justify-content:flex-start;">
+            <button class="btn btn-primary">Dark</button>
+            <button class="btn">Light</button>
+        </div>
+
+        <div class="divider"></div>
+        <span class="badge">Current: Dark</span>
+    </div>
+
+    <div class="card">
+        <h3>Security</h3>
+        <div class="sub">Enable PIN/password to protect your journal.</div>
+        <div class="divider"></div>
+
+        <label>Change PIN</label>
+        <input class="input" placeholder="New PIN (numbers)" />
+
+        <div class="actions" style="margin-top:12px; justify-content:flex-start;">
+            <button class="btn btn-primary">Save PIN</button>
+            <button class="btn">Disable Lock</button>
+        </div>
+
+        <div class="divider"></div>
+        <span class="badge badge-warn">Milestone: demo PIN is 1234</span>
+    </div>
+</div>
+
+<div class="grid grid-2" style="margin-top:14px;">
+    <div class="card">
+        <h3>Export PDF</h3>
+        <div class="sub">Export entries by date range (UI form ready).</div>
+        <div class="divider"></div>
+
+        <div class="row">
+            <div>
+                <label>From</label>
+                <input type="date" class="input" />
+            </div>
+            <div>
+                <label>To</label>
+                <input type="date" class="input" />
+            </div>
+        </div>
+
+        <div class="actions" style="margin-top:12px; justify-content:flex-start;">
+            <button class="btn btn-primary">Export</button>
+            <button class="btn">Preview</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Local Storage</h3>
+        <div class="sub">All data stored locally in SQLite (journal.db).</div>
+        <div class="divider"></div>
+
+        <table class="table">
+            <tbody>
+                <tr><th>Database</th><td>SQLite</td></tr>
+                <tr><th>File</th><td>journal.db</td></tr>
+                <tr><th>Privacy</th><td>Local-only</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

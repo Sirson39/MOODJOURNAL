@@ -1,0 +1,91 @@
+@page "/tags"
+
+<div class="header">
+    <div class="title">
+        <h2>Tags & Categories</h2>
+        <p>Create custom tags and organize categories.</p>
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <h3>Tags</h3>
+        <div class="sub">Add/remove custom tags (prebuilt tags can be shown read-only later).</div>
+        <div class="divider"></div>
+
+        <label>New Tag</label>
+        <div class="actions" style="justify-content:flex-start;">
+            <input class="input" style="max-width:320px;" placeholder="e.g., Vacation" @bind="NewTag" />
+            <button class="btn btn-primary" @onclick="AddTag">Add</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="pills">
+            @foreach (var t in CustomTags)
+            {
+                <span class="pill">
+                    @t
+                    <button class="x" type="button" @onclick="(()=>RemoveTag(t))">×</button>
+                </span>
+            }
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Categories</h3>
+        <div class="sub">Categories for organizing entries.</div>
+        <div class="divider"></div>
+
+        <label>New Category</label>
+        <div class="actions" style="justify-content:flex-start;">
+            <input class="input" style="max-width:320px;" placeholder="e.g., Study" @bind="NewCat" />
+            <button class="btn btn-primary" @onclick="AddCat">Add</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <table class="table">
+            <thead><tr><th>Category</th><th>Action</th></tr></thead>
+            <tbody>
+                @foreach (var c in Categories)
+                {
+                    <tr>
+                        <td>@c</td>
+                        <td><button class="btn btn-small btn-danger" @onclick="(()=>RemoveCat(c))">Remove</button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code{
+    string NewTag = "";
+    List<string> CustomTags = new(){ "Work", "Fitness", "Reflection" };
+
+    string NewCat = "";
+    List<string> Categories = new(){ "Personal", "Work", "Health", "Projects" };
+
+    void AddTag()
+    {
+        var t = (NewTag ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(t)) return;
+        if (!CustomTags.Contains(t, StringComparer.OrdinalIgnoreCase))
+            CustomTags.Add(t);
+        NewTag = "";
+    }
+
+    void RemoveTag(string t) => CustomTags.RemoveAll(x => x.Equals(t, StringComparison.OrdinalIgnoreCase));
+
+    void AddCat()
+    {
+        var c = (NewCat ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(c)) return;
+        if (!Categories.Contains(c, StringComparer.OrdinalIgnoreCase))
+            Categories.Add(c);
+        NewCat = "";
+    }
+
+    void RemoveCat(string c) => Categories.RemoveAll(x => x.Equals(c, StringComparison.OrdinalIgnoreCase));
+}

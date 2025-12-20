@@ -1,0 +1,52 @@
+<div class="row-3 row">
+    <div>
+        <label>Primary Mood (Required)</label>
+        <select class="input" @bind="PrimaryMood">
+            @foreach (var m in AllMoods) { <option value="@m">@m</option> }
+        </select>
+        <div class="sub" style="margin-top:6px;">This mood is used in analytics.</div>
+    </div>
+
+    <div>
+        <label>Secondary Mood 1 (Optional)</label>
+        <select class="input" @bind="SecondaryMood1">
+            <option value="">— None —</option>
+            @foreach (var m in AllMoods) { <option value="@m">@m</option> }
+        </select>
+    </div>
+
+    <div>
+        <label>Secondary Mood 2 (Optional)</label>
+        <select class="input" @bind="SecondaryMood2">
+            <option value="">— None —</option>
+            @foreach (var m in AllMoods) { <option value="@m">@m</option> }
+        </select>
+    </div>
+</div>
+
+<div class="pills">
+    <span class="pill primary">Primary: @PrimaryMood</span>
+    @if (!string.IsNullOrWhiteSpace(SecondaryMood1)) { <span class="pill">@SecondaryMood1</span> }
+    @if (!string.IsNullOrWhiteSpace(SecondaryMood2)) { <span class="pill">@SecondaryMood2</span> }
+</div>
+
+@code{
+    [Parameter] public string PrimaryMood { get; set; } = "Calm";
+    [Parameter] public EventCallback<string> PrimaryMoodChanged { get; set; }
+
+    [Parameter] public string? SecondaryMood1 { get; set; }
+    [Parameter] public EventCallback<string?> SecondaryMood1Changed { get; set; }
+
+    [Parameter] public string? SecondaryMood2 { get; set; }
+    [Parameter] public EventCallback<string?> SecondaryMood2Changed { get; set; }
+
+    List<string> AllMoods = new()
+    {
+        // Positive
+        "Happy","Excited","Relaxed","Grateful","Confident",
+        // Neutral
+        "Calm","Thoughtful","Curious","Nostalgic","Bored",
+        // Negative
+        "Sad","Angry","Stressed","Lonely","Anxious"
+    };
+}

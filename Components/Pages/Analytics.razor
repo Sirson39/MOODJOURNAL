@@ -1,0 +1,112 @@
+@page "/analytics"
+
+<div class="header">
+    <div class="title">
+        <h2>Analytics</h2>
+        <p>Mood distribution, most frequent moods, tags breakdown, and word trends.</p>
+    </div>
+    <div class="actions">
+        <button class="btn btn-primary" @onclick="Apply">Apply Range</button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="row-3 row">
+        <div>
+            <label>From</label>
+            <input type="date" class="input" @bind="From" />
+        </div>
+        <div>
+            <label>To</label>
+            <input type="date" class="input" @bind="To" />
+        </div>
+        <div>
+            <label>Quick Range</label>
+            <select class="input" @bind="Quick">
+                <option>Last 7 days</option>
+                <option selected>Last 30 days</option>
+                <option>Last 90 days</option>
+                <option>This Year</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-3" style="margin-top:14px;">
+    <div class="card kpi">
+        <div class="label">Most Frequent Mood</div>
+        <div class="value">Calm</div>
+        <div class="hint">Most common primary mood</div>
+    </div>
+    <div class="card kpi">
+        <div class="label">Current Streak</div>
+        <div class="value">3 days</div>
+        <div class="hint">Consecutive entry days</div>
+    </div>
+    <div class="card kpi">
+        <div class="label">Average Words/Entry</div>
+        <div class="value">186</div>
+        <div class="hint">Trend shown below</div>
+    </div>
+</div>
+
+<div class="grid grid-2" style="margin-top:14px;">
+    <div class="card">
+        <h3>Mood Distribution</h3>
+        <div class="sub">Preview bars (connect real chart later).</div>
+
+        <div style="margin-top:12px;">
+            <div class="sub">Positive (52%)</div>
+            <div class="progress"><div style="width:52%"></div></div>
+
+            <div class="sub" style="margin-top:10px;">Neutral (33%)</div>
+            <div class="progress"><div style="width:33%"></div></div>
+
+            <div class="sub" style="margin-top:10px;">Negative (15%)</div>
+            <div class="progress"><div style="width:15%"></div></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Most Used Tags</h3>
+        <div class="sub">Top tags for selected range.</div>
+        <div class="divider"></div>
+
+        <table class="table">
+            <thead>
+                <tr><th>Tag</th><th>Count</th><th>Share</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Work</td><td>9</td><td><span class="badge">24%</span></td></tr>
+                <tr><td>Fitness</td><td>7</td><td><span class="badge">18%</span></td></tr>
+                <tr><td>Reflection</td><td>6</td><td><span class="badge">16%</span></td></tr>
+                <tr><td>Health</td><td>5</td><td><span class="badge">13%</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="grid grid-2" style="margin-top:14px;">
+    <div class="card">
+        <h3>Tag Breakdown</h3>
+        <div class="sub">% of entries per topic group</div>
+        <div class="chart-box">Chart placeholder (pie/bar later)</div>
+    </div>
+
+    <div class="card">
+        <h3>Word Count Trends</h3>
+        <div class="sub">Average words per entry over time</div>
+        <div class="chart-box">Trend line placeholder (later)</div>
+    </div>
+</div>
+
+@code{
+    string From = DateTime.Today.AddDays(-30).ToString("yyyy-MM-dd");
+    string To = DateTime.Today.ToString("yyyy-MM-dd");
+    string Quick = "Last 30 days";
+
+    void Apply()
+    {
+        // later: compute analytics from DB
+    }
+}

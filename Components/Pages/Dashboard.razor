@@ -1,0 +1,100 @@
+@page "/dashboard"
+@inject NavigationManager Nav
+
+<div class="header">
+    <div class="title">
+        <h2>Dashboard</h2>
+        <p>Quick overview of your journaling, streaks, and mood summary.</p>
+    </div>
+    <div class="actions">
+        <button class="btn btn-primary" @onclick="@(() => Nav.NavigateTo("/entry"))">Write Today</button>
+        <button class="btn" @onclick="@(() => Nav.NavigateTo("/analytics"))">View Analytics</button>
+    </div>
+</div>
+
+<div class="grid grid-3">
+    <div class="card kpi">
+        <div class="label">Current Streak</div>
+        <div class="value">@CurrentStreak days</div>
+        <div class="hint">Consecutive days with entries</div>
+    </div>
+    <div class="card kpi">
+        <div class="label">Longest Streak</div>
+        <div class="value">@LongestStreak days</div>
+        <div class="hint">Best streak achieved</div>
+    </div>
+    <div class="card kpi">
+        <div class="label">Missed Days (30d)</div>
+        <div class="value">@MissedDays</div>
+        <div class="hint">Days without an entry</div>
+    </div>
+</div>
+
+<div class="grid grid-2" style="margin-top:14px;">
+    <div class="card">
+        <h3>Today</h3>
+        <div class="sub" style="margin-top:6px;">
+            Status: <span class="badge badge-warn">No entry yet</span>
+        </div>
+        <div class="divider"></div>
+        <div class="actions">
+            <button class="btn btn-primary" @onclick="@(() => Nav.NavigateTo("/entry"))">Create / Edit Today</button>
+            <button class="btn" @onclick="@(() => Nav.NavigateTo("/calendar"))">Open Calendar</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Mood Distribution (Last 30 Days)</h3>
+        <div class="sub">Frontend preview (connect real data later).</div>
+
+        <div style="margin-top:12px;">
+            <div class="sub">Positive (@Positive%)</div>
+            <div class="progress"><div style="width:@(Positive)%"></div></div>
+
+            <div class="sub" style="margin-top:10px;">Neutral (@Neutral%)</div>
+            <div class="progress"><div style="width:@(Neutral)%"></div></div>
+
+            <div class="sub" style="margin-top:10px;">Negative (@Negative%)</div>
+            <div class="progress"><div style="width:@(Negative)%"></div></div>
+        </div>
+    </div>
+</div>
+
+<div style="margin-top:14px;">
+    <div class="card">
+        <h3>Recent Entries</h3>
+        <div class="sub">Your latest entries (demo UI cards).</div>
+    </div>
+@foreach (var e in Recent)
+{
+    <EntryCard
+        Title="@e.Title"
+        DateText="@e.DateText"
+        Category="@e.Category"
+        PrimaryMood="@e.PrimaryMood"
+        Preview="@e.Preview"
+        Tags="@e.Tags"
+        OnOpen="@(() => Nav.NavigateTo("/entry"))"
+        OnDelete="@(() => { })" />
+}
+
+</div>
+
+@code{
+    int CurrentStreak = 3;
+    int LongestStreak = 12;
+    int MissedDays = 5;
+
+    int Positive = 52;
+    int Neutral = 33;
+    int Negative = 15;
+
+    List<EntryDemo> Recent = new()
+    {
+        new("A calm productive day","2025-12-20","Work","Calm","Finished tasks and planned next steps…", new(){"Work","Planning","Projects"}),
+        new("Gym + self-care","2025-12-19","Health","Confident","Workout felt good. I’m improving…", new(){"Fitness","Exercise","Self-care"}),
+        new("Thinking about life","2025-12-18","Personal","Thoughtful","Reflections on goals and habits…", new(){"Reflection","Personal Growth","Writing"})
+    };
+
+    record EntryDemo(string Title,string DateText,string Category,string PrimaryMood,string Preview,List<string> Tags);
+}

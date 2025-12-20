@@ -1,0 +1,129 @@
+﻿@page "/calendar"
+@inject NavigationManager Nav
+
+<div class="header">
+    <div class="title">
+        <h2>Calendar</h2>
+        <p>Click a day to open or create that day’s entry.</p>
+    </div>
+    <div class="actions">
+        <button class="btn" @onclick="PrevMonth">← Prev</button>
+        <span class="badge badge-accent">@MonthTitle</span>
+        <button class="btn" @onclick="NextMonth">Next →</button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="calendar" style="margin-bottom:10px;">
+        @foreach (var d in Weekdays)
+        {
+            <div class="cal-head">@d</div>
+        }
+    </div>
+
+    <div class="calendar">
+        @foreach (var cell in Cells)
+        {
+            var cls = "cal-day";
+            if (cell.IsOtherMonth) cls += " muted";
+            if (cell.HasEntry) cls += " has-entry";
+
+            <div class="@cls" @onclick="(()=>OpenDay(cell.Date))">
+                <div class="num">@cell.Date.Day</div>
+                <div class="cal-mini">
+                    @if (cell.HasEntry)
+                    {
+                        <span class="badge badge-accent">Entry</span>
+                        <span class="badge @cell.MoodBadge">@cell.Mood</span>
+                    }
+                    else
+                    {
+                        <span class="badge">No entry</span>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code{
+    DateTime ViewMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+    string[] Weekdays = new[] { "Sun","Mon","Tue","Wed","Thu","Fri","Sat" };
+
+    string MonthTitle => ViewMonth.ToString("MMMM yyyy");
+
+    List<Cell> Cells = new();
+
+    protected override void OnInitialized()
+    {
+        BuildCalendar();
+    }
+
+    void PrevMonth()
+    {
+        ViewMonth = ViewMonth.AddMonths(-1);
+        BuildCalendar();
+    }
+
+    void NextMonth()
+    {
+        ViewMonth = ViewMonth.AddMonths(1);
+        BuildCalendar();
+    }
+
+    void OpenDay(DateTime date)
+    {
+        // Later you can pass date querystring to editor (frontend)
+        Nav.NavigateTo("/entry");
+    }
+
+    void BuildCalendar()
+    {
+        Cells.Clear();
+
+        var first = new DateTime(ViewMonth.Year, ViewMonth.Month, 1);
+        var start = first.AddDays(-(int)first.DayOfWeek); // start from Sunday
+        var total = 42; // 6 weeks grid
+
+        // Demo entries
+        var demoHasEntry = new HashSet<DateTime>
+        {
+            DateTime.Today.Date,
+            DateTime.Today.AddDays(-1).Date,
+            DateTime.Today.AddDays(-3).Date,
+            DateTime.Today.AddDays(-6).Date,
+        };
+
+        for (int i = 0; i < total; i++)
+        {
+            var date = start.AddDays(i).Date;
+            var has = demoHasEntry.Contains(date);
+
+            var mood = has ? (i % 3 == 0 ? "Happy" : i % 3 == 1 ? "Calm" : "Stressed") : "—";
+            var badge = mood switch
+            {
+                "Happy" => "badge-good",
+                "Stressed" => "badge-bad",
+                _ => "badge-accent"
+            };
+
+            Cells.Add(new Cell
+            {
+                Date = date,
+                IsOtherMonth = date.Month != ViewMonth.Month,
+                HasEntry = has,
+                Mood = mood,
+                MoodBadge = badge
+            });
+        }
+    }
+
+    class Cell
+    {
+        public DateTime Date { get; set; }
+        public bool IsOtherMonth { get; set; }
+        public bool HasEntry { get; set; }
+        public string Mood { get; set; } = "—";
+        public string MoodBadge { get; set; } = "badge-accent";
+    }
+}

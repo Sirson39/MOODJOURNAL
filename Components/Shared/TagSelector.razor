@@ -1,0 +1,85 @@
+<div class="row">
+    <div>
+        <label>Search / Add Tag</label>
+        <input class="input" placeholder="Type tag (e.g., Work, Fitness) and press Add"
+               @bind="NewTag" />
+        <div class="actions" style="margin-top:10px;">
+            <button class="btn btn-small btn-primary" @onclick="AddTag">Add</button>
+            <button class="btn btn-small" @onclick="ClearAll" type="button">Clear</button>
+        </div>
+        <div class="sub" style="margin-top:10px;">
+            Quick picks:
+        </div>
+        <div class="pills">
+            @foreach (var p in QuickPicks.Take(14))
+            {
+                <button class="btn btn-small" type="button" @onclick="(()=>AddPreset(p))">@p</button>
+            }
+        </div>
+    </div>
+
+    <div>
+        <label>Selected Tags</label>
+        <div class="pills">
+            @if (Selected.Count == 0)
+            {
+                <span class="sub">No tags selected.</span>
+            }
+            else
+            {
+                @foreach (var t in Selected)
+                {
+                    <span class="pill">
+                        @t
+                        <button class="x" type="button" @onclick="(()=>Remove(t))">×</button>
+                    </span>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@code{
+    [Parameter] public List<string> Selected { get; set; } = new();
+    [Parameter] public EventCallback<List<string>> SelectedChanged { get; set; }
+
+    string NewTag = "";
+
+    List<string> QuickPicks = new()
+    {
+        "Work","Career","Studies","Family","Friends","Health","Fitness","Self-care",
+        "Hobbies","Travel","Nature","Finance","Projects","Planning","Reflection",
+        "Meditation","Yoga","Music","Reading","Writing","Cooking","Exercise"
+    };
+
+    async Task AddPreset(string t)
+    {
+        if (!Selected.Contains(t, StringComparer.OrdinalIgnoreCase))
+            Selected.Add(t);
+        await SelectedChanged.InvokeAsync(Selected);
+    }
+
+    async Task AddTag()
+    {
+        var t = (NewTag ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(t)) return;
+
+        if (!Selected.Contains(t, StringComparer.OrdinalIgnoreCase))
+            Selected.Add(t);
+
+        NewTag = "";
+        await SelectedChanged.InvokeAsync(Selected);
+    }
+
+    async Task Remove(string t)
+    {
+        Selected.RemoveAll(x => string.Equals(x, t, StringComparison.OrdinalIgnoreCase));
+        await SelectedChanged.InvokeAsync(Selected);
+    }
+
+    async Task ClearAll()
+    {
+        Selected.Clear();
+        await SelectedChanged.InvokeAsync(Selected);
+    }
+}

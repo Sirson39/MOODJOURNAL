@@ -1,17 +1,31 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager Nav
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+<div class="container-app" data-theme="dark">
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-badge">MJ</div>
+            <div>
+                <h1>MoodJournal</h1>
+                <p>Secure daily journaling</p>
+            </div>
         </div>
 
-        <article class="content px-4">
-            @Body
-        </article>
+        <NavMenu />
+
+        <div class="nav-bottom">
+            <div class="card">
+                <h3>Quick Tips</h3>
+                <div class="sub">
+                    One entry per day • Track moods • Export PDF
+                </div>
+            </div>
+
+            <a class="btn btn-ghost" href="/settings">⚙ Settings</a>
+        </div>
+    </aside>
+
+    <main class="content">
+        @Body
     </main>
 </div>
