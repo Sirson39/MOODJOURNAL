@@ -1,144 +1,99 @@
-@page "/entry"
+﻿@page "/entry"
 @inject NavigationManager Nav
 
-<div class="header">
-    <div class="title">
-        <h2>Entry Editor</h2>
-        <p>Create or edit your journal entry (one entry per day rule comes later in backend).</p>
-    </div>
-    <div class="actions">
-        <button class="btn" @onclick="@(() => Nav.NavigateTo("/timeline"))">Back to Timeline</button>
-        <button class="btn btn-danger" @onclick="Delete">Delete</button>
-        <button class="btn btn-primary" @onclick="Save">Save</button>
-    </div>
-</div>
+<div class="entry-shell">
+    <div class="page-hero" style="justify-content:center; position:relative; margin-bottom: 8px;">
+        <div style="flex:1;"></div>
 
-<div class="grid grid-2">
-    <div class="card">
-        <h3>Entry Details</h3>
-        <div class="sub">Date, title, category, and timestamps (UI preview).</div>
-
-        <div class="divider"></div>
-
-        <div class="row">
-            <div>
-                <label>Date</label>
-                <input type="date" class="input" @bind="DateValue" />
-            </div>
-            <div>
-                <label>Category</label>
-                <select class="input" @bind="Category">
-                    @foreach (var c in Categories)
-                    {
-                        <option value="@c">@c</option>
-                    }
-                </select>
+        <div style="flex:2;">
+            <h1 class="entry-title">New Entry</h1>
+            <div class="entry-meta">
+                <span class="pill-date">
+                    <span aria-hidden="true">📅</span>
+                    @DateText
+                </span>
             </div>
         </div>
 
-        <div style="margin-top:12px;">
-            <label>Title</label>
-            <input class="input" placeholder="Give your day a title�" @bind="Title" />
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="row">
-            <div>
-                <label>Created At</label>
-                <input class="input" value="@CreatedAt" disabled />
-            </div>
-            <div>
-                <label>Updated At</label>
-                <input class="input" value="@UpdatedAt" disabled />
-            </div>
+        <div class="actions" style="flex:1; justify-content:flex-end;">
+            <button class="btn btn-primary" @onclick="Save">
+                <span aria-hidden="true">💾</span>
+                Save Entry
+            </button>
         </div>
     </div>
+
+    <div class="card" style="margin-top:10px;">
+        <input class="input" placeholder="Give your entry a title..." @bind="Title" />
+    </div>
+
+    <div style="height:14px;"></div>
+
+    <div class="editor">
+        <textarea class="textarea" placeholder="Start writing your thoughts..." @bind="Content" @bind:event="oninput"></textarea>
+        <div class="word-count">@WordCount words</div>
+    </div>
+
+    <div style="height:14px;"></div>
 
     <div class="card">
-        <h3>Moods</h3>
-        <div class="sub">Primary mood required + up to two secondary moods.</div>
-
+        <h3>Primary Mood <span style="color:var(--bad);">*</span></h3>
+        <div class="sub">Choose one mood that best describes your day.</div>
         <div class="divider"></div>
-
-
-        <MoodPicker
-            PrimaryMood="@PrimaryMood" PrimaryMoodChanged="@(v => PrimaryMood = v)"
-            SecondaryMood1="@Secondary1" SecondaryMood1Changed="@(v => Secondary1 = v)"
-            SecondaryMood2="@Secondary2" SecondaryMood2Changed="@(v => Secondary2 = v)" />
-        <div class="divider"></div>
-
-        <h3>Tags</h3>
-        <div class="sub">Select pre-built tags or add your own custom tags.</div>
-
-        <TagSelector
-            Selected="@Tags"
-            SelectedChanged="@(v => Tags = v)" />
-    </div>
-</div>
-
-<div class="card" style="margin-top:14px;">
-    <div class="header">
-        <div class="title">
-            <h2 style="font-size:16px;">Content</h2>
-            <p>Use Markdown or plain text (preview UI below).</p>
-        </div>
-        <div class="actions">
-            <button class="btn btn-small @(Mode == "Write" ? "btn-primary" : "")"
-                    @onclick="SetWrite">Write</button>
-
-            <button class="btn btn-small @(Mode == "Preview" ? "btn-primary" : "")"
-                    @onclick="SetPreview">Preview</button>
-        </div>
+        <MoodPicker PrimaryMood="@PrimaryMood" PrimaryMoodChanged="OnPrimaryMoodChanged"
+                    SecondaryMoods="@SecondaryMoods" SecondaryMoodsChanged="OnSecondaryChanged" />
     </div>
 
-    @if (Mode == "Write")
-    {
-        <textarea class="input" placeholder="Write your entry here�" @bind="Content"></textarea>
-    }
-    else
-    {
-        <div class="chart-box" style="justify-content:flex-start; align-items:flex-start;">
-            <div>
-                <div class="sub" style="margin-bottom:8px;">Preview (simple text preview for milestone)</div>
-                <div style="white-space:pre-wrap; line-height:1.6;">@Content</div>
-            </div>
-        </div>
-    }
+    <div style="height:14px;"></div>
+
+    <div class="card">
+        <h3>Tags (optional)</h3>
+        <div class="sub">Add custom tags and quickly reuse common ones.</div>
+        <div class="divider"></div>
+        <TagSelector Tags="@Tags" TagsChanged="OnTagsChanged" />
+    </div>
+
+    <div style="height:14px;"></div>
+
+    <div class="card">
+        <h3>Category (optional)</h3>
+        <div class="sub">Keep entries organized by category.</div>
+        <div class="divider"></div>
+        <select class="select" @bind="Category">
+            <option value="">Select a category…</option>
+            @foreach (var c in Categories)
+            {
+                <option value="@c">@c</option>
+            }
+        </select>
+    </div>
+
+    <div style="height:24px;"></div>
 </div>
 
-@code{
+@code {
+    string DateText => DateTime.Now.ToString("dddd, MMMM d, yyyy");
+
     string Title = "";
-    string Category = "Personal";
-    string PrimaryMood = "Calm";
-    string? Secondary1;
-    string? Secondary2;
-
-    List<string> Tags = new();
-
-    string Mode = "Write";
     string Content = "";
 
-    string DateValue = DateTime.Today.ToString("yyyy-MM-dd");
-    string CreatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
-    string UpdatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+    string PrimaryMood = "Happy";
+    List<string> SecondaryMoods = new();
+    List<string> Tags = new();
+    string Category = "";
 
-    List<string> Categories = new() { "Personal", "Work", "Health", "Study", "Travel", "Projects", "Reflection" };
+    List<string> Categories = new() { "Work", "Health", "Studies", "Family", "Friends", "Personal Growth", "Travel" };
 
-    void SetWrite() => Mode = "Write";
-    void SetPreview() => Mode = "Preview";
+    int WordCount => string.IsNullOrWhiteSpace(Content)
+        ? 0
+        : Content.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
 
     void Save()
     {
-        UpdatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
-        // later: save to SQLite
+        Nav.NavigateTo("/dashboard");
     }
 
-    void Delete()
-    {
-        // later: delete from SQLite
-        Title = "";
-        Content = "";
-        Tags.Clear();
-    }
+    void OnPrimaryMoodChanged(string value) => PrimaryMood = value;
+    void OnSecondaryChanged(List<string> list) => SecondaryMoods = list;
+    void OnTagsChanged(List<string> list) => Tags = list;
 }

@@ -1,105 +1,79 @@
-@page "/search"
+ï»¿@page "/search"
 
-<div class="header">
-    <div class="title">
-        <h2>Search & Filter</h2>
-        <p>Search by title/content and filter by date range, moods, or tags.</p>
+<div class="page-hero">
+    <div class="hero-title">
+        <h1 style="font-size:56px;">Search</h1>
+        <p>Find entries by keywords, dates, moods, tags, and categories.</p>
     </div>
 </div>
 
-<div class="card">
-    <div class="row-3 row">
+<div class="card" style="max-width:980px; margin:0 auto;">
+    <div class="row row-3">
         <div>
-            <label>Search (Title/Content)</label>
-            <input class="input" @bind="Query" placeholder="e.g., gym, work, stressed…" />
+            <label class="sub">Search</label>
+            <input class="input" placeholder="Title or content..." @bind="Query" @bind:event="oninput" />
         </div>
-        <div>
-            <label>From</label>
-            <input type="date" class="input" @bind="From" />
-        </div>
-        <div>
-            <label>To</label>
-            <input type="date" class="input" @bind="To" />
-        </div>
-    </div>
 
-    <div class="row-3 row" style="margin-top:12px;">
         <div>
-            <label>Mood Category</label>
-            <select class="input" @bind="MoodCat">
+            <label class="sub">Date Range</label>
+            <select class="select" @bind="DateRange">
+                <option value="30">Last 30 days</option>
+                <option value="7">Last 7 days</option>
+                <option value="365">This year</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="sub">Mood</label>
+            <select class="select" @bind="Mood">
                 <option value="">Any</option>
                 <option>Positive</option>
                 <option>Neutral</option>
                 <option>Negative</option>
             </select>
         </div>
+    </div>
+
+    <div style="height:12px;"></div>
+
+    <div class="row row-2">
         <div>
-            <label>Tag</label>
-            <select class="input" @bind="Tag">
-                <option value="">Any</option>
-                @foreach (var t in Tags) { <option>@t</option> }
-            </select>
+            <label class="sub">Tag</label>
+            <input class="input" placeholder="e.g., Work" @bind="Tag" />
         </div>
         <div>
-            <label>Category</label>
-            <select class="input" @bind="Category">
-                <option value="">Any</option>
-                @foreach (var c in Categories) { <option>@c</option> }
-            </select>
+            <label class="sub">Category</label>
+            <input class="input" placeholder="e.g., Studies" @bind="Category" />
         </div>
     </div>
 
-    <div class="divider"></div>
+    <div style="height:14px;"></div>
 
-    <div class="actions">
-        <button class="btn btn-primary" @onclick="DoSearch">Search</button>
-        <button class="btn" @onclick="Reset">Reset</button>
-        <span class="badge">Results: @Results.Count</span>
+    <button class="btn btn-primary" @onclick="Apply">
+        <span aria-hidden="true">ðŸ”Ž</span> Apply Filters
+    </button>
+
+    <div style="height:14px;"></div>
+
+    <div class="sub">@ResultsCount results</div>
+
+    <div style="height:10px;"></div>
+
+    <div class="card chart" style="padding:14px;">
+        <div class="empty" style="min-height:160px;">
+            <div style="font-weight:750;">No results yet</div>
+            <div class="sub">Try writing an entry first.</div>
+        </div>
     </div>
 </div>
 
-@foreach (var r in Results)
-{
-    <div class="card">
-        <div class="header" style="margin-bottom:8px;">
-            <div class="title">
-                <h2 style="font-size:16px;margin:0;">@r.Title</h2>
-                <p style="margin:4px 0 0;">@r.Date • @r.Category</p>
-            </div>
-            <span class="badge badge-accent">@r.Mood</span>
-        </div>
-        <div class="sub">@r.Snippet</div>
-    </div>
-}
-
-@code{
+@code {
     string Query = "";
-    string From = DateTime.Today.AddDays(-30).ToString("yyyy-MM-dd");
-    string To = DateTime.Today.ToString("yyyy-MM-dd");
-    string MoodCat = "";
+    string Mood = "";
     string Tag = "";
     string Category = "";
+    string DateRange = "30";
+    int ResultsCount = 0;
 
-    List<string> Tags = new(){ "Work","Health","Fitness","Travel","Reflection","Projects" };
-    List<string> Categories = new(){ "Personal","Work","Health","Study","Travel","Projects","Reflection" };
-
-    List<Result> Results = new();
-
-    void DoSearch()
-    {
-        // demo results
-        Results = new()
-        {
-            new("2025-12-20","A calm productive day","Work","Calm","Found by search filters (demo)…"),
-            new("2025-12-19","Gym + self-care","Health","Confident","Preview snippet (demo)…")
-        };
-    }
-
-    void Reset()
-    {
-        Query=""; MoodCat=""; Tag=""; Category="";
-        Results.Clear();
-    }
-
-    record Result(string Date,string Title,string Category,string Mood,string Snippet);
+    void Apply() => ResultsCount = 0;
 }

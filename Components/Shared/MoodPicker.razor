@@ -1,52 +1,112 @@
-<div class="row-3 row">
-    <div>
-        <label>Primary Mood (Required)</label>
-        <select class="input" @bind="PrimaryMood">
-            @foreach (var m in AllMoods) { <option value="@m">@m</option> }
-        </select>
-        <div class="sub" style="margin-top:6px;">This mood is used in analytics.</div>
+﻿<div>
+    <div style="display:flex; flex-direction:column; gap:12px;">
+        <div>
+            <div class="sub" style="margin:0 0 6px;">🙂 Positive</div>
+            <div class="pills">
+                @foreach (var m in Positive)
+                {
+                    <button type="button"
+                            class="pill mood-chip good @(PrimaryMood == m.Name ? "active" : "")"
+                            @onclick="(()=>SetPrimary(m.Name))">
+                        <span aria-hidden="true">@m.Icon</span> @m.Name
+                    </button>
+                }
+            </div>
+        </div>
+
+        <div>
+            <div class="sub" style="margin:0 0 6px;">😐 Neutral</div>
+            <div class="pills">
+                @foreach (var m in Neutral)
+                {
+                    <button type="button"
+                            class="pill mood-chip neutral @(PrimaryMood == m.Name ? "active" : "")"
+                            @onclick="(()=>SetPrimary(m.Name))">
+                        <span aria-hidden="true">@m.Icon</span> @m.Name
+                    </button>
+                }
+            </div>
+        </div>
+
+        <div>
+            <div class="sub" style="margin:0 0 6px;">😕 Negative</div>
+            <div class="pills">
+                @foreach (var m in Negative)
+                {
+                    <button type="button"
+                            class="pill mood-chip bad @(PrimaryMood == m.Name ? "active" : "")"
+                            @onclick="(()=>SetPrimary(m.Name))">
+                        <span aria-hidden="true">@m.Icon</span> @m.Name
+                    </button>
+                }
+            </div>
+        </div>
     </div>
 
-    <div>
-        <label>Secondary Mood 1 (Optional)</label>
-        <select class="input" @bind="SecondaryMood1">
-            <option value="">� None �</option>
-            @foreach (var m in AllMoods) { <option value="@m">@m</option> }
-        </select>
-    </div>
+    <div style="height:14px;"></div>
 
     <div>
-        <label>Secondary Mood 2 (Optional)</label>
-        <select class="input" @bind="SecondaryMood2">
-            <option value="">� None �</option>
-            @foreach (var m in AllMoods) { <option value="@m">@m</option> }
-        </select>
+        <div class="sub" style="font-weight:700;">Secondary Moods (optional, max 2)</div>
+        <div class="sub" style="margin-top:2px;">Select up to 2 additional moods to better describe how you feel</div>
+
+        <div style="height:10px;"></div>
+
+        <div class="pills">
+            @foreach (var m in All)
+            {
+                var isSelected = SecondaryMoods.Contains(m.Name);
+                <button type="button"
+                        class="pill @(isSelected ? "active" : "")"
+                        @onclick="(()=>ToggleSecondary(m.Name))">
+                    <span aria-hidden="true">@m.Icon</span> @m.Name
+                </button>
+            }
+        </div>
     </div>
 </div>
 
-<div class="pills">
-    <span class="pill primary">Primary: @PrimaryMood</span>
-    @if (!string.IsNullOrWhiteSpace(SecondaryMood1)) { <span class="pill">@SecondaryMood1</span> }
-    @if (!string.IsNullOrWhiteSpace(SecondaryMood2)) { <span class="pill">@SecondaryMood2</span> }
-</div>
-
-@code{
-    [Parameter] public string PrimaryMood { get; set; } = "Calm";
+@code {
+    [Parameter] public string PrimaryMood { get; set; } = "Happy";
     [Parameter] public EventCallback<string> PrimaryMoodChanged { get; set; }
 
-    [Parameter] public string? SecondaryMood1 { get; set; }
-    [Parameter] public EventCallback<string?> SecondaryMood1Changed { get; set; }
+    [Parameter] public List<string> SecondaryMoods { get; set; } = new();
+    [Parameter] public EventCallback<List<string>> SecondaryMoodsChanged { get; set; }
 
-    [Parameter] public string? SecondaryMood2 { get; set; }
-    [Parameter] public EventCallback<string?> SecondaryMood2Changed { get; set; }
+    record Mood(string Name, string Icon);
 
-    List<string> AllMoods = new()
+    List<Mood> Positive = new()
     {
-        // Positive
-        "Happy","Excited","Relaxed","Grateful","Confident",
-        // Neutral
-        "Calm","Thoughtful","Curious","Nostalgic","Bored",
-        // Negative
-        "Sad","Angry","Stressed","Lonely","Anxious"
+        new("Happy","😊"), new("Excited","🎉"), new("Relaxed","😌"), new("Grateful","🙏"), new("Confident","💪")
     };
+
+    List<Mood> Neutral = new()
+    {
+        new("Calm","😶"), new("Thoughtful","🤔"), new("Curious","🧐"), new("Nostalgic","☁️"), new("Bored","😐")
+    };
+
+    List<Mood> Negative = new()
+    {
+        new("Sad","😔"), new("Angry","😠"), new("Stressed","😰"), new("Lonely","😞"), new("Anxious","😟")
+    };
+
+    List<Mood> All => Positive.Concat(Neutral).Concat(Negative).ToList();
+
+    async Task SetPrimary(string name)
+    {
+        PrimaryMood = name;
+        await PrimaryMoodChanged.InvokeAsync(name);
+    }
+
+    async Task ToggleSecondary(string name)
+    {
+        var list = SecondaryMoods.ToList();
+        if (list.Contains(name)) list.Remove(name);
+        else
+        {
+            if (list.Count >= 2) return;
+            list.Add(name);
+        }
+        SecondaryMoods = list;
+        await SecondaryMoodsChanged.InvokeAsync(list);
+    }
 }

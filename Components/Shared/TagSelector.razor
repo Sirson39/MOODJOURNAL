@@ -1,85 +1,49 @@
-<div class="row">
-    <div>
-        <label>Search / Add Tag</label>
-        <input class="input" placeholder="Type tag (e.g., Work, Fitness) and press Add"
-               @bind="NewTag" />
-        <div class="actions" style="margin-top:10px;">
-            <button class="btn btn-small btn-primary" @onclick="AddTag">Add</button>
-            <button class="btn btn-small" @onclick="ClearAll" type="button">Clear</button>
-        </div>
-        <div class="sub" style="margin-top:10px;">
-            Quick picks:
-        </div>
-        <div class="pills">
-            @foreach (var p in QuickPicks.Take(14))
-            {
-                <button class="btn btn-small" type="button" @onclick="(()=>AddPreset(p))">@p</button>
-            }
-        </div>
+<div>
+    <div style="display:flex; gap:10px;">
+        <input class="input" placeholder="Add custom tag..." @bind="NewTag" />
+        <button class="btn" style="width:48px;" @onclick="Add">+</button>
     </div>
 
-    <div>
-        <label>Selected Tags</label>
-        <div class="pills">
-            @if (Selected.Count == 0)
-            {
-                <span class="sub">No tags selected.</span>
-            }
-            else
-            {
-                @foreach (var t in Selected)
-                {
-                    <span class="pill">
-                        @t
-                        <button class="x" type="button" @onclick="(()=>Remove(t))">×</button>
-                    </span>
-                }
-            }
-        </div>
+    <div style="height:12px;"></div>
+
+    <div class="sub">Quick add:</div>
+    <div style="height:8px;"></div>
+
+    <div class="pills">
+        @foreach (var t in Quick)
+        {
+            var active = Tags.Contains(t);
+            <button type="button" class="pill @(active ? "active" : "")" @onclick="(()=>Toggle(t))">
+                @t
+            </button>
+        }
     </div>
 </div>
 
-@code{
-    [Parameter] public List<string> Selected { get; set; } = new();
-    [Parameter] public EventCallback<List<string>> SelectedChanged { get; set; }
+@code {
+    [Parameter] public List<string> Tags { get; set; } = new();
+    [Parameter] public EventCallback<List<string>> TagsChanged { get; set; }
 
     string NewTag = "";
 
-    List<string> QuickPicks = new()
+    List<string> Quick = new()
     {
-        "Work","Career","Studies","Family","Friends","Health","Fitness","Self-care",
-        "Hobbies","Travel","Nature","Finance","Projects","Planning","Reflection",
-        "Meditation","Yoga","Music","Reading","Writing","Cooking","Exercise"
+        "Work","Career","Studies","Family","Friends","Relationships","Health","Fitness","Personal Growth","Self-care","Hobbies","Travel"
     };
 
-    async Task AddPreset(string t)
+    async Task Add()
     {
-        if (!Selected.Contains(t, StringComparer.OrdinalIgnoreCase))
-            Selected.Add(t);
-        await SelectedChanged.InvokeAsync(Selected);
-    }
-
-    async Task AddTag()
-    {
-        var t = (NewTag ?? "").Trim();
-        if (string.IsNullOrWhiteSpace(t)) return;
-
-        if (!Selected.Contains(t, StringComparer.OrdinalIgnoreCase))
-            Selected.Add(t);
-
+        if (string.IsNullOrWhiteSpace(NewTag)) return;
+        var v = NewTag.Trim();
+        if (!Tags.Contains(v)) Tags.Add(v);
         NewTag = "";
-        await SelectedChanged.InvokeAsync(Selected);
+        await TagsChanged.InvokeAsync(Tags);
     }
 
-    async Task Remove(string t)
+    async Task Toggle(string t)
     {
-        Selected.RemoveAll(x => string.Equals(x, t, StringComparison.OrdinalIgnoreCase));
-        await SelectedChanged.InvokeAsync(Selected);
-    }
-
-    async Task ClearAll()
-    {
-        Selected.Clear();
-        await SelectedChanged.InvokeAsync(Selected);
+        if (Tags.Contains(t)) Tags.Remove(t);
+        else Tags.Add(t);
+        await TagsChanged.InvokeAsync(Tags);
     }
 }

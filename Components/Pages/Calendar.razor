@@ -1,129 +1,87 @@
 ﻿@page "/calendar"
-@inject NavigationManager Nav
 
-<div class="header">
-    <div class="title">
-        <h2>Calendar</h2>
-        <p>Click a day to open or create that day’s entry.</p>
-    </div>
-    <div class="actions">
-        <button class="btn" @onclick="PrevMonth">← Prev</button>
-        <span class="badge badge-accent">@MonthTitle</span>
-        <button class="btn" @onclick="NextMonth">Next →</button>
+<div class="page-hero">
+    <div class="hero-title">
+        <h1 style="font-size:52px;">Calendar</h1>
+        <p>Navigate through your journal history</p>
     </div>
 </div>
 
-<div class="card">
-    <div class="calendar" style="margin-bottom:10px;">
-        @foreach (var d in Weekdays)
+<div class="calendar" style="max-width:980px; margin:0 auto;">
+    <div class="cal-top">
+        <div>
+            <h2>@MonthTitle</h2>
+        </div>
+        <div class="cal-nav">
+            <button class="cal-btn" @onclick="PrevMonth">‹</button>
+            <button class="btn" style="padding:9px 12px;" @onclick="GoToday">Today</button>
+            <button class="cal-btn" @onclick="NextMonth">›</button>
+        </div>
+    </div>
+
+    <div class="cal-days">
+        @foreach (var d in DayNames)
         {
             <div class="cal-head">@d</div>
         }
-    </div>
 
-    <div class="calendar">
         @foreach (var cell in Cells)
         {
-            var cls = "cal-day";
-            if (cell.IsOtherMonth) cls += " muted";
-            if (cell.HasEntry) cls += " has-entry";
-
-            <div class="@cls" @onclick="(()=>OpenDay(cell.Date))">
-                <div class="num">@cell.Date.Day</div>
-                <div class="cal-mini">
-                    @if (cell.HasEntry)
-                    {
-                        <span class="badge badge-accent">Entry</span>
-                        <span class="badge @cell.MoodBadge">@cell.Mood</span>
-                    }
-                    else
-                    {
-                        <span class="badge">No entry</span>
-                    }
-                </div>
-            </div>
+            <div class="cal-cell @cell.Class" @onclick="(()=>Select(cell.Date))">@cell.Day</div>
         }
+    </div>
+
+    <div style="height:18px;"></div>
+
+    <div class="sub" style="text-align:center;">
+        <span style="display:inline-flex; gap:10px; align-items:center; justify-content:center;">
+            <span class="badge good">● Positive</span>
+            <span class="badge neutral">● Neutral</span>
+            <span class="badge bad">● Negative</span>
+        </span>
     </div>
 </div>
 
-@code{
-    DateTime ViewMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
-    string[] Weekdays = new[] { "Sun","Mon","Tue","Wed","Thu","Fri","Sat" };
+@code {
+    DateTime Current = new(DateTime.Now.Year, DateTime.Now.Month, 1);
+    DateTime Selected = DateTime.Now.Date;
 
-    string MonthTitle => ViewMonth.ToString("MMMM yyyy");
+    string MonthTitle => Current.ToString("MMMM yyyy");
+    string[] DayNames => new[] { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 
-    List<Cell> Cells = new();
+    List<CalCell> Cells => BuildCells();
 
-    protected override void OnInitialized()
+    void PrevMonth() => Current = Current.AddMonths(-1);
+    void NextMonth() => Current = Current.AddMonths(1);
+    void GoToday()
     {
-        BuildCalendar();
+        Current = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+        Selected = DateTime.Now.Date;
     }
 
-    void PrevMonth()
+    void Select(DateTime date) => Selected = date.Date;
+
+    List<CalCell> BuildCells()
     {
-        ViewMonth = ViewMonth.AddMonths(-1);
-        BuildCalendar();
-    }
-
-    void NextMonth()
-    {
-        ViewMonth = ViewMonth.AddMonths(1);
-        BuildCalendar();
-    }
-
-    void OpenDay(DateTime date)
-    {
-        // Later you can pass date querystring to editor (frontend)
-        Nav.NavigateTo("/entry");
-    }
-
-    void BuildCalendar()
-    {
-        Cells.Clear();
-
-        var first = new DateTime(ViewMonth.Year, ViewMonth.Month, 1);
-        var start = first.AddDays(-(int)first.DayOfWeek); // start from Sunday
-        var total = 42; // 6 weeks grid
-
-        // Demo entries
-        var demoHasEntry = new HashSet<DateTime>
+        var list = new List<CalCell>();
+        var start = Current;
+        var firstDayOfGrid = start.AddDays(-(int)start.DayOfWeek);
+        for (int i = 0; i < 42; i++)
         {
-            DateTime.Today.Date,
-            DateTime.Today.AddDays(-1).Date,
-            DateTime.Today.AddDays(-3).Date,
-            DateTime.Today.AddDays(-6).Date,
-        };
-
-        for (int i = 0; i < total; i++)
-        {
-            var date = start.AddDays(i).Date;
-            var has = demoHasEntry.Contains(date);
-
-            var mood = has ? (i % 3 == 0 ? "Happy" : i % 3 == 1 ? "Calm" : "Stressed") : "—";
-            var badge = mood switch
-            {
-                "Happy" => "badge-good",
-                "Stressed" => "badge-bad",
-                _ => "badge-accent"
-            };
-
-            Cells.Add(new Cell
-            {
-                Date = date,
-                IsOtherMonth = date.Month != ViewMonth.Month,
-                HasEntry = has,
-                Mood = mood,
-                MoodBadge = badge
-            });
+            var d = firstDayOfGrid.AddDays(i);
+            var cls = "";
+            if (d.Month != Current.Month) cls = "muted";
+            if (d.Date == DateTime.Now.Date) cls += " today";
+            if (d.Date == Selected.Date) cls += " selected";
+            list.Add(new CalCell { Date = d, Day = d.Day.ToString(), Class = cls.Trim() });
         }
+        return list;
     }
 
-    class Cell
+    class CalCell
     {
         public DateTime Date { get; set; }
-        public bool IsOtherMonth { get; set; }
-        public bool HasEntry { get; set; }
-        public string Mood { get; set; } = "—";
-        public string MoodBadge { get; set; } = "badge-accent";
+        public string Day { get; set; } = "";
+        public string Class { get; set; } = "";
     }
 }

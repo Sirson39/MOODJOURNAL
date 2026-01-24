@@ -1,112 +1,134 @@
-@page "/analytics"
+﻿@page "/analytics"
 
-<div class="header">
-    <div class="title">
-        <h2>Analytics</h2>
-        <p>Mood distribution, most frequent moods, tags breakdown, and word trends.</p>
+<div class="page-hero">
+    <div class="hero-title">
+        <h1 style="font-size:56px;">Analytics</h1>
+        <p>Insights into your journaling patterns</p>
     </div>
+
     <div class="actions">
-        <button class="btn btn-primary" @onclick="Apply">Apply Range</button>
+        <select class="select" style="width:170px;">
+            <option>Last 30 days</option>
+            <option>Last 7 days</option>
+            <option>This year</option>
+        </select>
     </div>
 </div>
 
-<div class="card">
-    <div class="row-3 row">
-        <div>
-            <label>From</label>
-            <input type="date" class="input" @bind="From" />
-        </div>
-        <div>
-            <label>To</label>
-            <input type="date" class="input" @bind="To" />
-        </div>
-        <div>
-            <label>Quick Range</label>
-            <select class="input" @bind="Quick">
-                <option>Last 7 days</option>
-                <option selected>Last 30 days</option>
-                <option>Last 90 days</option>
-                <option>This Year</option>
-            </select>
-        </div>
-    </div>
-</div>
-
-<div class="grid grid-3" style="margin-top:14px;">
-    <div class="card kpi">
-        <div class="label">Most Frequent Mood</div>
-        <div class="value">Calm</div>
-        <div class="hint">Most common primary mood</div>
-    </div>
-    <div class="card kpi">
-        <div class="label">Current Streak</div>
-        <div class="value">3 days</div>
-        <div class="hint">Consecutive entry days</div>
-    </div>
-    <div class="card kpi">
-        <div class="label">Average Words/Entry</div>
-        <div class="value">186</div>
-        <div class="hint">Trend shown below</div>
-    </div>
-</div>
-
-<div class="grid grid-2" style="margin-top:14px;">
+<div class="grid grid-3" style="grid-template-columns:repeat(4, 1fr);">
     <div class="card">
-        <h3>Mood Distribution</h3>
-        <div class="sub">Preview bars (connect real chart later).</div>
-
-        <div style="margin-top:12px;">
-            <div class="sub">Positive (52%)</div>
-            <div class="progress"><div style="width:52%"></div></div>
-
-            <div class="sub" style="margin-top:10px;">Neutral (33%)</div>
-            <div class="progress"><div style="width:33%"></div></div>
-
-            <div class="sub" style="margin-top:10px;">Negative (15%)</div>
-            <div class="progress"><div style="width:15%"></div></div>
+        <div class="kpi">
+            <div class="kpi-ico"><span>📄</span></div>
+            <div class="kpi-meta">
+                <b>Total Entries</b>
+                <small>0</small>
+            </div>
         </div>
     </div>
-
     <div class="card">
-        <h3>Most Used Tags</h3>
-        <div class="sub">Top tags for selected range.</div>
+        <div class="kpi">
+            <div class="kpi-ico"><span>🔥</span></div>
+            <div class="kpi-meta">
+                <b>Current Streak</b>
+                <small>0 days</small>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="kpi">
+            <div class="kpi-ico"><span>📈</span></div>
+            <div class="kpi-meta">
+                <b>Avg. Words</b>
+                <small>0</small>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="kpi">
+            <div class="kpi-ico"><span>🗓</span></div>
+            <div class="kpi-meta">
+                <b>Missed Days</b>
+                <small>30</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="height:16px;"></div>
+
+<div class="grid grid-2">
+    <div class="card chart">
+        <div style="display:flex;align-items:center;gap:10px;">
+            <div class="kpi-ico" style="width:42px;height:42px;"><span>🙂</span></div>
+            <div>
+                <h3 style="margin:0;">Mood Distribution</h3>
+                <div class="sub">No entries in this period</div>
+            </div>
+        </div>
         <div class="divider"></div>
+        <div class="empty" style="min-height:240px;">
+            <div class="sub">No entries in this period</div>
+        </div>
+    </div>
 
-        <table class="table">
-            <thead>
-                <tr><th>Tag</th><th>Count</th><th>Share</th></tr>
-            </thead>
-            <tbody>
-                <tr><td>Work</td><td>9</td><td><span class="badge">24%</span></td></tr>
-                <tr><td>Fitness</td><td>7</td><td><span class="badge">18%</span></td></tr>
-                <tr><td>Reflection</td><td>6</td><td><span class="badge">16%</span></td></tr>
-                <tr><td>Health</td><td>5</td><td><span class="badge">13%</span></td></tr>
-            </tbody>
-        </table>
+    <div class="card chart">
+        <div style="display:flex;align-items:center;gap:10px;">
+            <div class="kpi-ico" style="width:42px;height:42px;"><span>📈</span></div>
+            <div>
+                <h3 style="margin:0;">Word Count Trend</h3>
+                <div class="sub">Total: 0 words</div>
+            </div>
+        </div>
+        <div class="divider"></div>
+        <div class="empty" style="min-height:240px;">
+            <div class="sub">No data yet</div>
+        </div>
     </div>
 </div>
 
-<div class="grid grid-2" style="margin-top:14px;">
-    <div class="card">
-        <h3>Tag Breakdown</h3>
-        <div class="sub">% of entries per topic group</div>
-        <div class="chart-box">Chart placeholder (pie/bar later)</div>
+<div style="height:16px;"></div>
+
+<div class="grid grid-2">
+    <div class="card chart">
+        <h3>Most Used Tags</h3>
+        <div class="divider"></div>
+        <div class="empty" style="min-height:220px;">
+            <div class="sub">No tags used yet</div>
+        </div>
     </div>
 
-    <div class="card">
-        <h3>Word Count Trends</h3>
-        <div class="sub">Average words per entry over time</div>
-        <div class="chart-box">Trend line placeholder (later)</div>
+    <div class="card chart">
+        <h3>Mood Timeline</h3>
+        <div class="divider"></div>
+        <div class="empty" style="min-height:220px;">
+            <div class="sub">No mood history yet</div>
+        </div>
     </div>
 </div>
 
-@code{
-    string From = DateTime.Today.AddDays(-30).ToString("yyyy-MM-dd");
-    string To = DateTime.Today.ToString("yyyy-MM-dd");
-    string Quick = "Last 30 days";
+<div style="height:16px;"></div>
 
-    void Apply()
-    {
-        // later: compute analytics from DB
-    }
-}
+<div class="card chart">
+    <h3>Streak Statistics</h3>
+    <div class="divider"></div>
+    <div class="grid grid-3" style="grid-template-columns:repeat(3, 1fr);">
+        <div class="card" style="background:rgba(217,119,6,.08);">
+            <div style="text-align:center;">
+                <div style="font-size:46px; font-weight:800; color:rgba(42,31,20,.55);">0</div>
+                <div class="sub">Current Streak</div>
+            </div>
+        </div>
+        <div class="card" style="background:rgba(217,119,6,.06);">
+            <div style="text-align:center;">
+                <div style="font-size:46px; font-weight:800; color:rgba(42,31,20,.45);">0</div>
+                <div class="sub">Longest Streak</div>
+            </div>
+        </div>
+        <div class="card" style="background:rgba(217,119,6,.06);">
+            <div style="text-align:center;">
+                <div style="font-size:46px; font-weight:800; color:rgba(42,31,20,.55);">30</div>
+                <div class="sub">Missed Days (Last 30 days)</div>
+            </div>
+        </div>
+    </div>
+</div>

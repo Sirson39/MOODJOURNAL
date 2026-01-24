@@ -1,32 +1,31 @@
-@page "/tags"
+﻿@page "/tags"
 
-<div class="header">
-    <div class="title">
-        <h2>Tags & Categories</h2>
-        <p>Create custom tags and organize categories.</p>
+<div class="page-hero">
+    <div class="hero-title">
+        <h1 style="font-size:56px;">Tags</h1>
+        <p>Manage the labels you use to organize and filter your journal.</p>
     </div>
 </div>
 
-<div class="grid grid-2">
+<div class="grid grid-2" style="max-width:980px; margin:0 auto;">
     <div class="card">
         <h3>Tags</h3>
-        <div class="sub">Add/remove custom tags (prebuilt tags can be shown read-only later).</div>
+        <div class="sub">Create, remove, and quickly add tags to entries.</div>
         <div class="divider"></div>
 
-        <label>New Tag</label>
-        <div class="actions" style="justify-content:flex-start;">
-            <input class="input" style="max-width:320px;" placeholder="e.g., Vacation" @bind="NewTag" />
-            <button class="btn btn-primary" @onclick="AddTag">Add</button>
+        <div style="display:flex; gap:10px;">
+            <input class="input" placeholder="Add new tag..." @bind="NewTag" />
+            <button class="btn btn-primary" @onclick="AddTag">+</button>
         </div>
 
-        <div class="divider"></div>
+        <div style="height:12px;"></div>
 
         <div class="pills">
-            @foreach (var t in CustomTags)
+            @foreach (var t in Tags)
             {
-                <span class="pill">
-                    @t
-                    <button class="x" type="button" @onclick="(()=>RemoveTag(t))">�</button>
+                <span class="pill active">
+                    🏷 @t
+                    <button class="btn btn-ghost" style="padding:6px 10px;" @onclick="(()=>RemoveTag(t))">×</button>
                 </span>
             }
         </div>
@@ -34,58 +33,54 @@
 
     <div class="card">
         <h3>Categories</h3>
-        <div class="sub">Categories for organizing entries.</div>
+        <div class="sub">Group entries under a category for cleaner filtering.</div>
         <div class="divider"></div>
 
-        <label>New Category</label>
-        <div class="actions" style="justify-content:flex-start;">
-            <input class="input" style="max-width:320px;" placeholder="e.g., Study" @bind="NewCat" />
-            <button class="btn btn-primary" @onclick="AddCat">Add</button>
+        <div style="display:flex; gap:10px;">
+            <input class="input" placeholder="Add new category..." @bind="NewCategory" />
+            <button class="btn btn-primary" @onclick="AddCategory">+</button>
         </div>
 
-        <div class="divider"></div>
+        <div style="height:12px;"></div>
 
-        <table class="table">
-            <thead><tr><th>Category</th><th>Action</th></tr></thead>
-            <tbody>
-                @foreach (var c in Categories)
-                {
-                    <tr>
-                        <td>@c</td>
-                        <td><button class="btn btn-small btn-danger" @onclick="(()=>RemoveCat(c))">Remove</button></td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <div class="pills">
+            @foreach (var c in Categories)
+            {
+                <span class="pill">
+                    📌 @c
+                    <button class="btn btn-ghost" style="padding:6px 10px;" @onclick="(()=>RemoveCategory(c))">×</button>
+                </span>
+            }
+        </div>
     </div>
 </div>
 
-@code{
+@code {
     string NewTag = "";
-    List<string> CustomTags = new(){ "Work", "Fitness", "Reflection" };
+    string NewCategory = "";
 
-    string NewCat = "";
-    List<string> Categories = new(){ "Personal", "Work", "Health", "Projects" };
+    List<string> Tags = new() { "Work", "Studies", "Health", "Friends", "Fitness", "Personal Growth", "Travel" };
+    List<string> Categories = new() { "Work", "Studies", "Health", "Family" };
 
     void AddTag()
     {
-        var t = (NewTag ?? "").Trim();
-        if (string.IsNullOrWhiteSpace(t)) return;
-        if (!CustomTags.Contains(t, StringComparer.OrdinalIgnoreCase))
-            CustomTags.Add(t);
-        NewTag = "";
+        if (!string.IsNullOrWhiteSpace(NewTag))
+        {
+            Tags.Add(NewTag.Trim());
+            NewTag = "";
+        }
     }
 
-    void RemoveTag(string t) => CustomTags.RemoveAll(x => x.Equals(t, StringComparison.OrdinalIgnoreCase));
+    void RemoveTag(string t) => Tags.Remove(t);
 
-    void AddCat()
+    void AddCategory()
     {
-        var c = (NewCat ?? "").Trim();
-        if (string.IsNullOrWhiteSpace(c)) return;
-        if (!Categories.Contains(c, StringComparer.OrdinalIgnoreCase))
-            Categories.Add(c);
-        NewCat = "";
+        if (!string.IsNullOrWhiteSpace(NewCategory))
+        {
+            Categories.Add(NewCategory.Trim());
+            NewCategory = "";
+        }
     }
 
-    void RemoveCat(string c) => Categories.RemoveAll(x => x.Equals(c, StringComparison.OrdinalIgnoreCase));
+    void RemoveCategory(string c) => Categories.Remove(c);
 }

@@ -1,100 +1,128 @@
-@page "/dashboard"
+﻿@page "/dashboard"
 @inject NavigationManager Nav
 
-<div class="header">
-    <div class="title">
-        <h2>Dashboard</h2>
-        <p>Quick overview of your journaling, streaks, and mood summary.</p>
+<div class="page-hero">
+    <div class="hero-title">
+        <h1>Welcome back</h1>
+        <p>@TodayText</p>
     </div>
+
     <div class="actions">
-        <button class="btn btn-primary" @onclick="@(() => Nav.NavigateTo("/entry"))">Write Today</button>
-        <button class="btn" @onclick="@(() => Nav.NavigateTo("/analytics"))">View Analytics</button>
+        <button class="btn btn-primary" @onclick="(()=>Nav.NavigateTo(" /entry"))">
+            <span aria-hidden="true">✍</span>
+            Write Today
+        </button>
     </div>
 </div>
 
 <div class="grid grid-3">
-    <div class="card kpi">
-        <div class="label">Current Streak</div>
-        <div class="value">@CurrentStreak days</div>
-        <div class="hint">Consecutive days with entries</div>
+    <div class="card">
+        <h3>Your Journey</h3>
+        <div class="sub">Streaks, entries, and missed days.</div>
+        <div class="divider"></div>
+
+        <div class="grid grid-2">
+            <div class="card" style="background: linear-gradient(135deg, var(--primary), var(--primary-2)); color:#fff; border-color: rgba(255,255,255,.18)">
+                <div class="kpi">
+                    <div class="kpi-ico" style="background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.22); color:#fff;">
+                        <span>🔥</span>
+                    </div>
+                    <div class="kpi-meta">
+                        <b>Current Streak</b>
+                        <small>@CurrentStreak days</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="kpi">
+                    <div class="kpi-ico"><span>🏆</span></div>
+                    <div class="kpi-meta">
+                        <b>Best Streak</b>
+                        <small>@BestStreak days</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="kpi">
+                    <div class="kpi-ico"><span>📖</span></div>
+                    <div class="kpi-meta">
+                        <b>Total Entries</b>
+                        <small>@TotalEntries journals</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="kpi">
+                    <div class="kpi-ico"><span>🗓</span></div>
+                    <div class="kpi-meta">
+                        <b>Missed (30d)</b>
+                        <small>@MissedDays days</small>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="card kpi">
-        <div class="label">Longest Streak</div>
-        <div class="value">@LongestStreak days</div>
-        <div class="hint">Best streak achieved</div>
+
+    <div class="card chart">
+        <h3>Mood Distribution</h3>
+        <div class="divider"></div>
+        <div class="empty">
+            <div class="ico">😐</div>
+            <div>
+                <div style="font-weight:700;">No mood data yet</div>
+                <div class="sub">Start journaling to see your mood trends</div>
+            </div>
+        </div>
     </div>
-    <div class="card kpi">
-        <div class="label">Missed Days (30d)</div>
-        <div class="value">@MissedDays</div>
-        <div class="hint">Days without an entry</div>
+
+    <div class="card chart">
+        <h3>Popular Tags</h3>
+        <div class="divider"></div>
+        <div class="empty">
+            <div class="ico">🏷</div>
+            <div>
+                <div style="font-weight:700;">No tags yet</div>
+                <div class="sub">Add tags to your entries to see them here</div>
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="grid grid-2" style="margin-top:14px;">
-    <div class="card">
-        <h3>Today</h3>
-        <div class="sub" style="margin-top:6px;">
-            Status: <span class="badge badge-warn">No entry yet</span>
+<div style="height:16px;"></div>
+
+<div class="grid grid-2">
+    <div class="card chart">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+            <h3 style="margin:0;">Word Count Trends</h3>
+            <div class="sub"><span style="color:var(--primary); font-weight:800;">↗</span> Avg: @AvgWords words</div>
         </div>
         <div class="divider"></div>
-        <div class="actions">
-            <button class="btn btn-primary" @onclick="@(() => Nav.NavigateTo("/entry"))">Create / Edit Today</button>
-            <button class="btn" @onclick="@(() => Nav.NavigateTo("/calendar"))">Open Calendar</button>
+        <div class="empty" style="min-height:160px;">
+            <div class="sub">No words yet — write your first entry.</div>
         </div>
     </div>
 
-    <div class="card">
-        <h3>Mood Distribution (Last 30 Days)</h3>
-        <div class="sub">Frontend preview (connect real data later).</div>
-
-        <div style="margin-top:12px;">
-            <div class="sub">Positive (@Positive%)</div>
-            <div class="progress"><div style="width:@(Positive)%"></div></div>
-
-            <div class="sub" style="margin-top:10px;">Neutral (@Neutral%)</div>
-            <div class="progress"><div style="width:@(Neutral)%"></div></div>
-
-            <div class="sub" style="margin-top:10px;">Negative (@Negative%)</div>
-            <div class="progress"><div style="width:@(Negative)%"></div></div>
+    <div class="card chart">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+            <h3 style="margin:0;">Recent Entries</h3>
+            <a href="/timeline" class="sub" style="color:var(--primary); font-weight:700;">View all ›</a>
+        </div>
+        <div class="divider"></div>
+        <div class="empty" style="min-height:160px;">
+            <div style="font-weight:750;">No entries yet</div>
+            <a class="sub" href="/entry" style="color:var(--primary); font-weight:800;">Write your first entry →</a>
         </div>
     </div>
 </div>
 
-<div style="margin-top:14px;">
-    <div class="card">
-        <h3>Recent Entries</h3>
-        <div class="sub">Your latest entries (demo UI cards).</div>
-    </div>
-@foreach (var e in Recent)
-{
-    <EntryCard
-        Title="@e.Title"
-        DateText="@e.DateText"
-        Category="@e.Category"
-        PrimaryMood="@e.PrimaryMood"
-        Preview="@e.Preview"
-        Tags="@e.Tags"
-        OnOpen="@(() => Nav.NavigateTo("/entry"))"
-        OnDelete="@(() => { })" />
-}
-
-</div>
-
-@code{
-    int CurrentStreak = 3;
-    int LongestStreak = 12;
-    int MissedDays = 5;
-
-    int Positive = 52;
-    int Neutral = 33;
-    int Negative = 15;
-
-    List<EntryDemo> Recent = new()
-    {
-        new("A calm productive day","2025-12-20","Work","Calm","Finished tasks and planned next steps�", new(){"Work","Planning","Projects"}),
-        new("Gym + self-care","2025-12-19","Health","Confident","Workout felt good. I�m improving�", new(){"Fitness","Exercise","Self-care"}),
-        new("Thinking about life","2025-12-18","Personal","Thoughtful","Reflections on goals and habits�", new(){"Reflection","Personal Growth","Writing"})
-    };
-
-    record EntryDemo(string Title,string DateText,string Category,string PrimaryMood,string Preview,List<string> Tags);
+@code {
+    string TodayText => DateTime.Now.ToString("dddd, MMMM d, yyyy");
+    int CurrentStreak = 0;
+    int BestStreak = 0;
+    int TotalEntries = 0;
+    int MissedDays = 0;
+    int AvgWords = 0;
 }

@@ -1,159 +1,65 @@
-@page "/timeline"
-@inject NavigationManager Nav
+Ôªø@page "/timeline"
 
-<div class="header">
-    <div class="title">
-        <h2>Timeline</h2>
-        <p>Browse past entries with pagination.</p>
-    </div>
-    <div class="actions">
-        <button class="btn btn-primary" @onclick="@(() => Nav.NavigateTo("/entry"))">New Entry</button>
+<div class="page-hero">
+    <div class="hero-title">
+        <h1 style="font-size:64px;">Timeline</h1>
+        <p>Browse and search all your entries</p>
     </div>
 </div>
 
-<div class="card">
-    <div class="row-3 row">
-        <div>
-            <label>Quick Search</label>
-            <input class="input" placeholder="Search title/contentÖ" @bind="Query" />
-        </div>
-        <div>
-            <label>Mood</label>
-            <select class="input" @bind="MoodFilter">
-                <option value="">Any</option>
-                <option>Positive</option>
-                <option>Neutral</option>
-                <option>Negative</option>
-            </select>
-        </div>
-        <div>
-            <label>Tag</label>
-            <select class="input" @bind="TagFilter">
-                <option value="">Any</option>
-                @foreach (var t in AllTags)
-                {
-                    <option>@t</option>
-                }
-            </select>
-        </div>
+<div class="card" style="max-width:980px; margin:0 auto;">
+    <div style="display:flex; gap:12px; align-items:center;">
+        <input class="input" placeholder="Search entries..." @bind="Query" @bind:event="oninput" />
+        <button class="btn" @onclick="ToggleFilters">
+            <span aria-hidden="true">‚è∑</span>
+            Filters
+        </button>
     </div>
 
-    <div class="divider"></div>
+    @if (ShowFilters)
+    {
+        <div style="height:12px;"></div>
+        <div class="row row-3">
+            <div>
+                <label class="sub">Mood</label>
+                <select class="select" @bind="Mood">
+                    <option value="">Any</option>
+                    <option>Positive</option>
+                    <option>Neutral</option>
+                    <option>Negative</option>
+                </select>
+            </div>
+            <div>
+                <label class="sub">Tag</label>
+                <input class="input" placeholder="e.g., Work" @bind="Tag" />
+            </div>
+            <div>
+                <label class="sub">Category</label>
+                <input class="input" placeholder="e.g., Studies" @bind="Category" />
+            </div>
+        </div>
+    }
 
-    <div class="actions">
-        <button class="btn" @onclick="ApplyFilters">Apply</button>
-        <button class="btn" @onclick="Reset">Reset</button>
-        <span class="badge">Showing @Paged.Count / @Filtered.Count</span>
+    <div style="height:14px;"></div>
+    <div class="sub">@EntriesFound entries found</div>
+
+    <div style="height:10px;"></div>
+
+    <div class="card chart" style="padding:14px;">
+        <div class="empty" style="min-height:160px;">
+            <div style="font-weight:750;">No entries found</div>
+        </div>
     </div>
 </div>
 
-@foreach (var e in Paged)
-{
-    <EntryCard
-        Title="@e.Title"
-        DateText="@e.DateText"
-        Category="@e.Category"
-        PrimaryMood="@e.PrimaryMood"
-        Preview="@e.Preview"
-        Tags="@e.Tags"
-        OnOpen="@(() => Nav.NavigateTo("/entry"))"
-        OnDelete="@(() => { })" />
-}
-
-
-<div class="actions" style="margin-top:10px;">
-    <button class="btn" @onclick="Prev" disabled="@(Page == 1)">Prev</button>
-    <span class="badge badge-accent">Page @Page / @TotalPages</span>
-    <button class="btn" @onclick="Next" disabled="@(Page == TotalPages)">Next</button>
-</div>
-
-@code{
+@code {
     string Query = "";
-    string MoodFilter = "";
-    string TagFilter = "";
+    string Mood = "";
+    string Tag = "";
+    string Category = "";
+    bool ShowFilters = false;
 
-    int Page = 1;
-    int PageSize = 5;
+    int EntriesFound => 0;
 
-    List<string> AllTags = new() { "Work", "Health", "Travel", "Fitness", "Reflection", "Planning", "Projects" };
-
-    List<EntryDemo> All = new();
-    List<EntryDemo> Filtered = new();
-    List<EntryDemo> Paged = new();
-
-    int TotalPages => Math.Max(1, (int)Math.Ceiling(Filtered.Count / (double)PageSize));
-
-    protected override void OnInitialized()
-    {
-        for (int i = 0; i < 18; i++)
-        {
-            All.Add(new EntryDemo(
-                $"Entry #{18 - i} title",
-                DateTime.Today.AddDays(-i).ToString("yyyy-MM-dd"),
-                i % 3 == 0 ? "Work" : i % 3 == 1 ? "Health" : "Personal",
-                i % 3 == 0 ? "Happy" : i % 3 == 1 ? "Calm" : "Stressed",
-                "This is a short preview of the journal contentÖ",
-                new List<string> { AllTags[i % AllTags.Count], "Reflection" }
-            ));
-        }
-
-        Filtered = All.ToList();
-        BuildPage();
-    }
-
-    void ApplyFilters()
-    {
-        IEnumerable<EntryDemo> q = All;
-
-        if (!string.IsNullOrWhiteSpace(Query))
-            q = q.Where(x => x.Title.Contains(Query, StringComparison.OrdinalIgnoreCase)
-                          || x.Preview.Contains(Query, StringComparison.OrdinalIgnoreCase));
-
-        if (!string.IsNullOrWhiteSpace(TagFilter))
-            q = q.Where(x => x.Tags.Any(t => t.Equals(TagFilter, StringComparison.OrdinalIgnoreCase)));
-
-        if (!string.IsNullOrWhiteSpace(MoodFilter))
-        {
-            q = MoodFilter switch
-            {
-                "Positive" => q.Where(x => new[] { "Happy", "Excited", "Relaxed", "Grateful", "Confident" }.Contains(x.PrimaryMood)),
-                "Neutral" => q.Where(x => new[] { "Calm", "Thoughtful", "Curious", "Nostalgic", "Bored" }.Contains(x.PrimaryMood)),
-                "Negative" => q.Where(x => new[] { "Sad", "Angry", "Stressed", "Lonely", "Anxious" }.Contains(x.PrimaryMood)),
-                _ => q
-            };
-        }
-
-        Filtered = q.ToList();
-        Page = 1;
-        BuildPage();
-    }
-
-    void Reset()
-    {
-        Query = "";
-        MoodFilter = "";
-        TagFilter = "";
-        Filtered = All.ToList();
-        Page = 1;
-        BuildPage();
-    }
-
-    void BuildPage()
-    {
-        Paged = Filtered.Skip((Page - 1) * PageSize).Take(PageSize).ToList();
-    }
-
-    void Prev()
-    {
-        if (Page > 1) Page--;
-        BuildPage();
-    }
-
-    void Next()
-    {
-        if (Page < TotalPages) Page++;
-        BuildPage();
-    }
-
-    record EntryDemo(string Title, string DateText, string Category, string PrimaryMood, string Preview, List<string> Tags);
+    void ToggleFilters() => ShowFilters = !ShowFilters;
 }
