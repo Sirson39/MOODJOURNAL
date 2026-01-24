@@ -1,25 +1,21 @@
 ﻿@page "/calendar"
 
-<div class="page-hero">
-    <div class="hero-title">
-        <h1 style="font-size:52px;">Calendar</h1>
-        <p>Navigate through your journal history</p>
-    </div>
-</div>
+<section class="calendar-shell">
 
-<div class="calendar" style="max-width:980px; margin:0 auto;">
-    <div class="cal-top">
-        <div>
-            <h2>@MonthTitle</h2>
+    <div class="cal-topbar">
+        <div class="cal-toptext">
+            <div class="cal-title">Calendar</div>
+            <div class="cal-subtitle">Click a day to open or create that day’s entry.</div>
         </div>
-        <div class="cal-nav">
-            <button class="cal-btn" @onclick="PrevMonth">‹</button>
-            <button class="btn" style="padding:9px 12px;" @onclick="GoToday">Today</button>
-            <button class="cal-btn" @onclick="NextMonth">›</button>
+
+        <div class="cal-actions">
+            <button type="button" class="cal-nav" @onclick="PrevMonth">← Prev</button>
+            <div class="cal-monthpill">@Current.ToString("MMMM yyyy")</div>
+            <button type="button" class="cal-nav" @onclick="NextMonth">Next →</button>
         </div>
     </div>
 
-    <div class="cal-days">
+    <div class="cal-grid">
         @foreach (var d in DayNames)
         {
             <div class="cal-head">@d</div>
@@ -27,61 +23,130 @@
 
         @foreach (var cell in Cells)
         {
-            <div class="cal-cell @cell.Class" @onclick="(()=>Select(cell.Date))">@cell.Day</div>
+            <button class="cal-cell @cell.Class"
+                    type="button"
+                    @onclick="(() => Select(cell.Date))">
+
+                <div class="cal-daynum">@cell.Date.Day</div>
+
+                @if (cell.HasEntry)
+                {
+                    <div class="cal-chips">
+                        <span class="cal-chip cal-chip-entry">Entry</span>
+
+                        @if (!string.IsNullOrWhiteSpace(cell.Mood))
+                        {
+                            <span class="cal-chip @MoodChipClass(cell.Mood)">@cell.Mood</span>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="cal-sub">No entry</div>
+                }
+            </button>
         }
     </div>
 
-    <div style="height:18px;"></div>
-
-    <div class="sub" style="text-align:center;">
-        <span style="display:inline-flex; gap:10px; align-items:center; justify-content:center;">
-            <span class="badge good">● Positive</span>
-            <span class="badge neutral">● Neutral</span>
-            <span class="badge bad">● Negative</span>
-        </span>
-    </div>
-</div>
+</section>
 
 @code {
-    DateTime Current = new(DateTime.Now.Year, DateTime.Now.Month, 1);
-    DateTime Selected = DateTime.Now.Date;
+    private DateTime Current = new(DateTime.Now.Year, DateTime.Now.Month, 1);
+    private DateTime Selected = DateTime.Now.Date;
 
-    string MonthTitle => Current.ToString("MMMM yyyy");
-    string[] DayNames => new[] { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+    private readonly string[] DayNames = new[] { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 
-    List<CalCell> Cells => BuildCells();
+    private List<CalCell> Cells = new();
 
-    void PrevMonth() => Current = Current.AddMonths(-1);
-    void NextMonth() => Current = Current.AddMonths(1);
-    void GoToday()
+    protected override void OnInitialized()
     {
-        Current = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-        Selected = DateTime.Now.Date;
+        Rebuild();
     }
 
-    void Select(DateTime date) => Selected = date.Date;
+    private void PrevMonth()
+    {
+        Current = Current.AddMonths(-1);
+        Selected = new DateTime(Current.Year, Current.Month, 1);
+        Rebuild();
+    }
 
-    List<CalCell> BuildCells()
+    private void NextMonth()
+    {
+        Current = Current.AddMonths(1);
+        Selected = new DateTime(Current.Year, Current.Month, 1);
+        Rebuild();
+    }
+
+    private void Select(DateTime date)
+    {
+        Selected = date.Date;
+        Rebuild(); // so selected border updates cleanly
+    }
+
+    private void Rebuild()
+    {
+        Cells = BuildCells();
+        StateHasChanged();
+    }
+
+    private List<CalCell> BuildCells()
     {
         var list = new List<CalCell>();
-        var start = Current;
+
+        var start = new DateTime(Current.Year, Current.Month, 1);
         var firstDayOfGrid = start.AddDays(-(int)start.DayOfWeek);
+
+        // Demo sample entries (replace later with DB/service)
+        var demo = new Dictionary<DateTime, string>
+        {
+            { new DateTime(Current.Year, Current.Month, 15), "Happy" },
+            { new DateTime(Current.Year, Current.Month, 18), "Happy" },
+            { new DateTime(Current.Year, Current.Month, 20), "Stressed" },
+            { new DateTime(Current.Year, Current.Month, 21), "Happy" },
+        };
+
         for (int i = 0; i < 42; i++)
         {
             var d = firstDayOfGrid.AddDays(i);
+
             var cls = "";
-            if (d.Month != Current.Month) cls = "muted";
+            if (d.Month != Current.Month) cls += " muted";
             if (d.Date == DateTime.Now.Date) cls += " today";
             if (d.Date == Selected.Date) cls += " selected";
-            list.Add(new CalCell { Date = d, Day = d.Day.ToString(), Class = cls.Trim() });
+
+            var has = demo.ContainsKey(d.Date);
+            var mood = has ? demo[d.Date] : "";
+
+            list.Add(new CalCell
+            {
+                Date = d,
+                Class = cls.Trim(),
+                HasEntry = has,
+                Mood = mood
+            });
         }
+
         return list;
     }
 
-    class CalCell
+    private string MoodChipClass(string mood)
+    {
+        mood = mood.ToLowerInvariant();
+
+        if (mood is "happy" or "excited" or "relaxed" or "grateful" or "confident")
+            return "cal-chip-mood cal-chip-pos";
+
+        if (mood is "calm" or "thoughtful" or "curious" or "nostalgic" or "bored")
+            return "cal-chip-mood cal-chip-neu";
+
+        return "cal-chip-mood cal-chip-neg";
+    }
+
+    private class CalCell
     {
         public DateTime Date { get; set; }
-        public string Day { get; set; } = "";
         public string Class { get; set; } = "";
+        public bool HasEntry { get; set; }
+        public string Mood { get; set; } = "";
     }
 }

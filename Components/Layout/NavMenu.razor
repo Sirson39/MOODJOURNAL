@@ -8,12 +8,18 @@
     @NavItem("/analytics", "Analytics", "Charts + trends", "analytics")
     @NavItem("/search", "Search & Filter", "Find anything", "search")
     @NavItem("/tags", "Tags & Categories", "Manage labels", "tag")
+    @NavItem("/settings", "Settings", "Preferences", "settings")
 </div>
 
 @code {
     RenderFragment NavItem(string href, string title, string sub, string icon) => builder =>
     {
-        var isActive = Nav.Uri.EndsWith(href, StringComparison.OrdinalIgnoreCase);
+        // Clean relative path (no query string)
+        var rel = "/" + Nav.ToBaseRelativePath(Nav.Uri).Split('?')[0];
+
+        // Active if exact match OR sub-route match (e.g., /settings/profile)
+        var isActive = rel.Equals(href, StringComparison.OrdinalIgnoreCase)
+                       || rel.StartsWith(href.TrimEnd('/') + "/", StringComparison.OrdinalIgnoreCase);
 
         builder.OpenElement(0, "a");
         builder.AddAttribute(1, "href", href);
@@ -35,8 +41,8 @@
         builder.AddContent(11, sub);
         builder.CloseElement();
 
-        builder.CloseElement();
-        builder.CloseElement();
+        builder.CloseElement(); // nav-text
+        builder.CloseElement(); // a
     };
 
     string IconSvg(string name) => name switch
@@ -48,6 +54,7 @@
         "analytics" => """<svg viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'><path d='M4 19V5' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/><path d='M4 19h16' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/><path d='M7 15l3-4 3 2 4-6' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/></svg>""",
         "search" => """<svg viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'><path d='M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z' stroke='currentColor' stroke-width='1.8'/><path d='M16.5 16.5 21 21' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/></svg>""",
         "tag" => """<svg viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'><path d='M3 12.5V5.8c0-.9.7-1.6 1.6-1.6h6.7c.4 0 .8.2 1.1.5l8.8 8.8c.7.7.7 1.8 0 2.5l-5.6 5.6c-.7.7-1.8.7-2.5 0l-8.8-8.8c-.3-.3-.5-.7-.5-1.1Z' stroke='currentColor' stroke-width='1.8' stroke-linejoin='round'/><path d='M7.8 8.2h.01' stroke='currentColor' stroke-width='3' stroke-linecap='round'/></svg>""",
+        "settings" => """<svg viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'><path d='M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z' stroke='currentColor' stroke-width='1.8'/><path d='M19.4 15a7.9 7.9 0 0 0 .1-1 7.9 7.9 0 0 0-.1-1l2-1.6-2-3.4-2.5 1a7.7 7.7 0 0 0-1.7-1l-.4-2.7H9.2l-.4 2.7a7.7 7.7 0 0 0-1.7 1l-2.5-1-2 3.4 2 1.6a7.9 7.9 0 0 0-.1 1c0 .34.03.67.1 1l-2 1.6 2 3.4 2.5-1c.53.4 1.1.74 1.7 1l.4 2.7h5.6l.4-2.7c.6-.26 1.17-.6 1.7-1l2.5 1 2-3.4-2-1.6Z' stroke='currentColor' stroke-width='1.8' stroke-linejoin='round'/></svg>""",
         _ => """<svg viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'><path d='M6 12h12' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'/></svg>"""
     };
 }

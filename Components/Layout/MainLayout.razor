@@ -3,29 +3,39 @@
 
 <div class="container-app">
     <aside class="sidebar">
-        <div class="brand">
-            <div class="brand-badge" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M6 4.5h9.5c1.38 0 2.5 1.12 2.5 2.5V20c-1.2-.9-2.8-1.3-4.5-1.3H6V4.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
-                    <path d="M6 18.7c-1.8 0-3.5.5-4.5 1.3V7c0-1.38 1.12-2.5 2.5-2.5H6v14.2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" opacity=".9" />
-                </svg>
-            </div>
-            <div>
-                <h1>MoodJournal</h1>
-                <p>Your Journal</p>
+
+        <!-- TOP: Brand/Logo -->
+        <div class="side-top">
+            <a class="brand" href="/dashboard">
+                <span class="brand-badge" aria-hidden="true">
+                    <!-- simple book icon -->
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6 4.5h10a2.5 2.5 0 0 1 2.5 2.5v12.5a2 2 0 0 0-2-2H6a2.5 2.5 0 0 0-2.5 2V7A2.5 2.5 0 0 1 6 4.5Z"
+                              stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+                        <path d="M6 4.5v15" stroke="currentColor" stroke-width="1.8" />
+                    </svg>
+                </span>
+
+                <div>
+                    <h1>MoodJournal</h1>
+                    <p>Your Journal</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- MIDDLE: Nav -->
+        <div class="side-nav">
+            <NavMenu />
+        </div>
+
+        <!-- BOTTOM: Quick tips (small) -->
+        <div class="side-bottom">
+            <div class="quick-tips-card">
+                <div class="qt-title">Quick Tips</div>
+                <div class="qt-text">One entry per day • Track moods • Search & filter</div>
             </div>
         </div>
 
-        <NavMenu />
-
-        <div class="nav-bottom">
-            <div class="card">
-                <h3>Quick Tips</h3>
-                <div class="sub">One entry per day • Track moods • Search & filter</div>
-            </div>
-
-            <a class="btn btn-ghost" href="/settings">⚙ Settings</a>
-        </div>
     </aside>
 
     <main class="content">
