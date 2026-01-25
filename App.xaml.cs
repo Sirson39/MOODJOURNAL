@@ -1,4 +1,4 @@
-﻿namespace MoodJournal
+﻿namespace MOODJournal
 {
     public partial class App : Application
     {
@@ -9,7 +9,7 @@
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
-            return new Window(new MainPage()) { Title = "MoodJournal" };
+            return new Window(new MainPage()) { Title = "MOODJournal" };
         }
     }
 }

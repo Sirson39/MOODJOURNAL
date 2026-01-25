@@ -14,7 +14,7 @@
         <!-- For example: <RuntimeIdentifiers>maccatalyst-x64;maccatalyst-arm64</RuntimeIdentifiers> -->
 
         <OutputType>Exe</OutputType>
-        <RootNamespace>MoodJournal</RootNamespace>
+        <RootNamespace>MOODJournal</RootNamespace>
         <UseMaui>true</UseMaui>
         <SingleProject>true</SingleProject>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -22,7 +22,7 @@
         <Nullable>enable</Nullable>
 
         <!-- Display name -->
-        <ApplicationTitle>MoodJournal</ApplicationTitle>
+        <ApplicationTitle>MOODJournal</ApplicationTitle>
 
         <!-- App Identifier -->
         <ApplicationId>com.companyname.moodjournal</ApplicationId>
@@ -64,10 +64,8 @@
         <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.8" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Components\Shared\" />
+        <PackageReference Include="QuestPDF" Version="2025.12.3" />
+        <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
     </ItemGroup>
 
 </Project>

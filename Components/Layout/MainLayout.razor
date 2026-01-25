@@ -1,44 +1,64 @@
 ﻿@inherits LayoutComponentBase
-@inject NavigationManager Nav
+@using MOODJournal.Components
+@inject SecurityService Security
 
-<div class="container-app">
-    <aside class="sidebar">
+<LockScreen OnUnlocked="StateHasChanged" />
 
-        <!-- TOP: Brand/Logo -->
-        <div class="side-top">
-            <a class="brand" href="/dashboard">
-                <span class="brand-badge" aria-hidden="true">
-                    <!-- simple book icon -->
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M6 4.5h10a2.5 2.5 0 0 1 2.5 2.5v12.5a2 2 0 0 0-2-2H6a2.5 2.5 0 0 0-2.5 2V7A2.5 2.5 0 0 1 6 4.5Z"
-                              stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
-                        <path d="M6 4.5v15" stroke="currentColor" stroke-width="1.8" />
-                    </svg>
-                </span>
-
-                <div>
-                    <h1>MoodJournal</h1>
-                    <p>Your Journal</p>
-                </div>
-            </a>
-        </div>
-
-        <!-- MIDDLE: Nav -->
-        <div class="side-nav">
-            <NavMenu />
-        </div>
-
-        <!-- BOTTOM: Quick tips (small) -->
-        <div class="side-bottom">
-            <div class="quick-tips-card">
-                <div class="qt-title">Quick Tips</div>
-                <div class="qt-text">One entry per day • Track moods • Search & filter</div>
+<div class="app-container">
+    <aside class="sidebar-nav">
+        <div class="brand">
+            <div class="brand-icon">
+                <i class="ph-fill ph-notebook"></i>
+            </div>
+            <div class="brand-text">
+                <h1 class="brand-font">MoodJournal</h1>
+                <p>Your Journal</p>
             </div>
         </div>
 
+        <nav class="nav-links">
+            <NavLink class="nav-item" href="" Match="NavLinkMatch.All">
+                <i class="ph ph-squares-four"></i>
+                Dashboard
+            </NavLink>
+            <NavLink class="nav-item" href="write">
+                <i class="ph ph-pencil-line"></i>
+                Write
+            </NavLink>
+            <NavLink class="nav-item" href="calendar">
+                <i class="ph ph-calendar-blank"></i>
+                Calendar
+            </NavLink>
+            <NavLink class="nav-item" href="timeline">
+                <i class="ph ph-list-dashes"></i>
+                Timeline
+            </NavLink>
+            <NavLink class="nav-item" href="analytics">
+                <i class="ph ph-chart-line-up"></i>
+                Analytics
+            </NavLink>
+            <NavLink class="nav-item" href="tags">
+                <i class="ph ph-tag"></i>
+                Tags & Categories
+            </NavLink>
+            <NavLink class="nav-item" href="settings">
+                <i class="ph ph-gear"></i>
+                Settings
+            </NavLink>
+        </nav>
+
+        <div style="margin-top: auto;">
+            <div class="card"
+                style="padding: 1rem; background-color: rgba(196, 98, 16, 0.03); border: 1px dashed var(--border-color);">
+                <p style="font-size: 0.8rem; margin: 0; color: var(--text-secondary); line-height: 1.4;">
+                    <strong>Quick Tips</strong><br />
+                    One entry per day • Track moods • Search & filter
+                </p>
+            </div>
+        </div>
     </aside>
 
-    <main class="content">
+    <main class="main-content">
         @Body
     </main>
 </div>

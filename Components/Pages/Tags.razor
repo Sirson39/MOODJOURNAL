@@ -1,0 +1,85 @@
+@page "/tags"
+@using MOODJournal.Models
+@using MOODJournal.Services
+@inject DatabaseService DB
+
+<div class="fade-in">
+    <div class="content-header">
+        <div>
+            <h2>Tags & Categories</h2>
+            <p style="color: var(--text-secondary);">Manage your custom labels and organized categories.</p>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <!-- Tags Card -->
+        <div class="card span-2">
+            <h3 style="margin-top: 0;">Your Tags</h3>
+            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 2rem;">A complete list of all tags you've used in your journal.</p>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+                @if (AllTags.Any())
+                {
+                    @foreach (var tag in AllTags)
+                    {
+                        <div style="background: var(--accent-light); color: var(--accent); padding: 0.6rem 1.25rem; border-radius: 50px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; border: 1px solid rgba(196, 98, 16, 0.1);">
+                            #@tag.Name
+                            <span style="font-size: 0.7rem; opacity: 0.6; background: rgba(196, 98, 16, 0.1); padding: 0.1rem 0.4rem; border-radius: 4px;">@tag.Count</span>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p>No tags used yet.</p>
+                }
+            </div>
+        </div>
+
+        <!-- Categories Card -->
+        <div class="card">
+            <h3 style="margin-top: 0;">Categories</h3>
+            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Entries per category.</p>
+
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                @foreach (var cat in Categories)
+                {
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--bg-color); border-radius: 12px;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <i class="ph ph-folder" style="color: var(--accent);"></i>
+                            <span style="font-weight: 600;">@cat.Name</span>
+                        </div>
+                        <span style="font-size: 0.9rem; font-weight: 700;">@cat.Count</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<LabelStat> AllTags = new();
+    private List<LabelStat> Categories = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var entries = await DB.GetEntriesAsync();
+
+        AllTags = entries.SelectMany(x => x.Tags)
+                         .GroupBy(x => x)
+                         .Select(g => new LabelStat { Name = g.Key, Count = g.Count() })
+                         .OrderByDescending(x => x.Count)
+                         .ToList();
+
+        Categories = entries.Where(x => !string.IsNullOrEmpty(x.Category))
+                            .GroupBy(x => x.Category)
+                            .Select(g => new LabelStat { Name = g.Key, Count = g.Count() })
+                            .OrderByDescending(x => x.Count)
+                            .ToList();
+    }
+
+    public class LabelStat
+    {
+        public string Name { get; set; } = "";
+        public int Count { get; set; }
+    }
+}

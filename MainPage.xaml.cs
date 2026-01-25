@@ -1,4 +1,4 @@
-﻿namespace MoodJournal
+﻿namespace MOODJournal
 {
     public partial class MainPage : ContentPage
     {

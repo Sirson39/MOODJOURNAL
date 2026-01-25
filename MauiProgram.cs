@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
+using MOODJournal.Services;
 
-namespace MoodJournal
+namespace MOODJournal
 {
     public static class MauiProgram
     {
@@ -15,6 +16,9 @@ namespace MoodJournal
                 });
 
             builder.Services.AddMauiBlazorWebView();
+            builder.Services.AddSingleton<DatabaseService>();
+            builder.Services.AddSingleton<SecurityService>();
+            builder.Services.AddSingleton<ExportService>();
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();

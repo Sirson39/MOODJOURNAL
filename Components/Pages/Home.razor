@@ -1,1 +1,176 @@
-﻿
+﻿@page "/"
+@using MOODJournal.Models
+@using MOODJournal.Services
+@inject DatabaseService DB
+
+<div class="fade-in">
+    <div class="content-header">
+        <div>
+            <h2>Welcome back</h2>
+            <p style="color: var(--text-secondary);">@DateTime.Now.ToString("dddd, MMMM dd, yyyy")</p>
+        </div>
+        <button class="btn-primary" @onclick='() => Nav.NavigateTo("/write")'>
+            <i class="ph-fill ph-pencil"></i>
+            Write Today
+        </button>
+    </div>
+
+    <div class="dashboard-grid">
+        <!-- Stats Card -->
+        <div class="card span-2">
+            <h3 style="margin-top: 0; font-size: 1.2rem;">Your Journey</h3>
+            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Streaks, entries, and missed days.</p>
+
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
+                <div style="background: var(--accent); color: white; padding: 1.5rem; border-radius: var(--radius-md); text-align: center;">
+                    <i class="ph-fill ph-fire" style="font-size: 1.5rem;"></i>
+                    <div style="font-size: 0.75rem; margin-top: 0.5rem; opacity: 0.8;">Current Streak</div>
+                    <div style="font-size: 1.25rem; font-weight: 700;">@CurrentStreak days</div>
+                </div>
+                <div style="background: white; border: 1px solid var(--border-color); padding: 1.5rem; border-radius: var(--radius-md); text-align: center;">
+                    <i class="ph-bold ph-trophy" style="font-size: 1.5rem; color: var(--accent);"></i>
+                    <div style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--text-secondary);">Best Streak</div>
+                    <div style="font-size: 1.25rem; font-weight: 700;">@BestStreak days</div>
+                </div>
+                <div style="background: white; border: 1px solid var(--border-color); padding: 1.5rem; border-radius: var(--radius-md); text-align: center;">
+                    <i class="ph-bold ph-book-open" style="font-size: 1.5rem; color: var(--accent);"></i>
+                    <div style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--text-secondary);">Total Entries</div>
+                    <div style="font-size: 1.25rem; font-weight: 700;">@TotalEntries</div>
+                </div>
+                <div style="background: white; border: 1px solid var(--border-color); padding: 1.5rem; border-radius: var(--radius-md); text-align: center;">
+                    <i class="ph-bold ph-calendar-x" style="font-size: 1.5rem; color: var(--accent);"></i>
+                    <div style="font-size: 0.75rem; margin-top: 0.5rem; color: var(--text-secondary);">Missed (30d)</div>
+                    <div style="font-size: 1.25rem; font-weight: 700;">@MissedDays</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mood Dist placeholder -->
+        <div class="card">
+            <h3 style="margin-top: 0; font-size: 1.1rem;">Mood Distribution</h3>
+            <div style="height: 150px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 0.85rem; text-align: center;">
+                <div>
+                    <i class="ph ph-chart-pie" style="font-size: 2rem; opacity: 0.2;"></i><br />
+                    No mood data yet
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Entries -->
+        <div class="card span-2">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="margin: 0; font-size: 1.1rem;">Recent Entries</h3>
+                <a href="/timeline" style="font-size: 0.8rem; color: var(--accent); text-decoration: none; font-weight: 600;">View all &gt;</a>
+            </div>
+
+            @if (RecentEntries.Any())
+            {
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    @foreach (var entry in RecentEntries)
+                    {
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                            <div>
+                                <div style="font-weight: 600;">@entry.Title</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary);">@entry.Date.ToString("MMM dd, yyyy")</div>
+                            </div>
+                            <span class="mood-badge @GetMoodClass(entry.PrimaryMood)">
+                                @entry.PrimaryMood
+                            </span>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                    <p>No entries yet — write your first entry.</p>
+                    <button class="btn-primary" style="margin: 0 auto;" @onclick='() => Nav.NavigateTo("/write")'>Write now</button>
+                </div>
+            }
+        </div>
+
+        <!-- Popular Tags -->
+        <div class="card">
+            <h3 style="margin-top: 0; font-size: 1.1rem;">Popular Tags</h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem;">
+                @if (PopularTags.Any())
+                {
+                    @foreach (var tag in PopularTags)
+                    {
+                        <span style="background: var(--bg-color); padding: 0.4rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: 500;">
+                            #@tag
+                        </span>
+                    }
+                }
+                else
+                {
+                    <p style="font-size: 0.85rem; color: var(--text-secondary);">No tags yet</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Inject] NavigationManager Nav { get; set; } = default!;
+
+    List<JournalEntry> RecentEntries = new();
+    List<string> PopularTags = new();
+    int CurrentStreak = 0;
+    int BestStreak = 0;
+    int TotalEntries = 0;
+    int MissedDays = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var entries = await DB.GetEntriesAsync();
+        TotalEntries = entries.Count;
+        RecentEntries = entries.Take(3).ToList();
+
+        // Mocking streaks for now - logic to be implemented in Phase 5
+        CalculateStreaks(entries);
+
+        // Extract popular tags
+        PopularTags = entries.SelectMany(x => x.Tags).GroupBy(x => x).OrderByDescending(g => g.Count()).Take(5).Select(g => g.Key).ToList();
+    }
+
+    private void CalculateStreaks(List<JournalEntry> entries)
+    {
+        // Simple streak logic for initial view
+        if (!entries.Any()) return;
+
+        int current = 0;
+        DateTime checkDate = DateTime.Now.Date;
+
+        // Check if today or yesterday has an entry
+        bool hasToday = entries.Any(e => e.Date.Date == checkDate);
+        bool hasYesterday = entries.Any(e => e.Date.Date == checkDate.AddDays(-1));
+
+        if (hasToday || hasYesterday)
+        {
+            DateTime lastDate = hasToday ? checkDate : checkDate.AddDays(-1);
+            while (entries.Any(e => e.Date.Date == lastDate))
+            {
+                current++;
+                lastDate = lastDate.AddDays(-1);
+            }
+        }
+
+        CurrentStreak = current;
+        BestStreak = Math.Max(CurrentStreak, 0); // Placeholder
+
+        // Missed in last 30 days
+        var last30 = Enumerable.Range(0, 30).Select(i => DateTime.Now.Date.AddDays(-i));
+        MissedDays = last30.Count(d => !entries.Any(e => e.Date.Date == d));
+    }
+
+    private string GetMoodClass(string mood)
+    {
+        var positive = new[] { "Happy", "Excited", "Relaxed", "Grateful", "Confident" };
+        var neutral = new[] { "Calm", "Thoughtful", "Curious", "Nostalgic", "Bored" };
+
+        if (positive.Contains(mood)) return "mood-positive";
+        if (neutral.Contains(mood)) return "mood-neutral";
+        return "mood-negative";
+    }
+}

@@ -1,0 +1,68 @@
+@inject SecurityService Security
+
+@if (Security.IsLocked)
+{
+    <div
+        style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg-color); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 2rem;">
+        <div class="card" style="width: 100%; max-width: 500px; padding: 3rem; text-align: left;">
+            <h2 class="brand-font" style="font-size: 2rem; margin-top: 0;">Unlock MoodJournal</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">Enter PIN/password to access your private entries.
+            </p>
+
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                <span
+                    style="background: var(--bg-color); border: 1px solid var(--border-color); padding: 0.2rem 0.6rem; border-radius: 50px; font-size: 0.75rem; font-weight: 600;">Local
+                    • Private</span>
+            </div>
+
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">PIN /
+                Password</label>
+            <input type="password" @bind="pinInput" placeholder="Demo PIN: 1234"
+                style="width: 100%; padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; margin-bottom: 1.5rem; background: #fff;" />
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <p style="color: #dc3545; font-size: 0.85rem; margin-bottom: 1rem;">@errorMessage</p>
+            }
+
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn-primary" style="padding: 1rem 2rem;" @onclick="TryUnlock">Unlock</button>
+                <button @onclick="Clear"
+                    style="background: #fff; border: 1px solid var(--border-color); padding: 1rem 2rem; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;">Clear</button>
+            </div>
+
+            <hr style="margin: 2.5rem 0; border: 0; border-top: 1px solid var(--border-color);" />
+
+            <p style="font-size: 0.75rem; color: var(--text-secondary);">
+                Milestone mode: PIN = <strong>1234</strong>. You can implement real security later in Settings.
+            </p>
+        </div>
+    </div>
+}
+
+@code {
+    private string pinInput = "";
+    private string errorMessage = "";
+
+    [Parameter] public EventCallback OnUnlocked { get; set; }
+
+    private async Task TryUnlock()
+    {
+        if (Security.Unlock(pinInput))
+        {
+            errorMessage = "";
+            await OnUnlocked.InvokeAsync();
+        }
+        else
+        {
+            errorMessage = "Invalid PIN. Please try again.";
+            pinInput = "";
+        }
+    }
+
+    private void Clear()
+    {
+        pinInput = "";
+        errorMessage = "";
+    }
+}

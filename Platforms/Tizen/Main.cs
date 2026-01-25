@@ -2,7 +2,7 @@ using System;
 using Microsoft.Maui;
 using Microsoft.Maui.Hosting;
 
-namespace MoodJournal
+namespace MOODJournal
 {
     internal class Program : MauiApplication
     {

@@ -1,152 +1,133 @@
-﻿@page "/calendar"
+@page "/calendar"
+@using MOODJournal.Models
+@using MOODJournal.Services
+@inject DatabaseService DB
+@inject NavigationManager Nav
 
-<section class="calendar-shell">
-
-    <div class="cal-topbar">
-        <div class="cal-toptext">
-            <div class="cal-title">Calendar</div>
-            <div class="cal-subtitle">Click a day to open or create that day’s entry.</div>
+<div class="fade-in">
+    <div class="content-header">
+        <div>
+            <h2>Calendar</h2>
+            <p style="color: var(--text-secondary);">Click a day to open or create that day's entry.</p>
         </div>
-
-        <div class="cal-actions">
-            <button type="button" class="cal-nav" @onclick="PrevMonth">← Prev</button>
-            <div class="cal-monthpill">@Current.ToString("MMMM yyyy")</div>
-            <button type="button" class="cal-nav" @onclick="NextMonth">Next →</button>
-        </div>
-    </div>
-
-    <div class="cal-grid">
-        @foreach (var d in DayNames)
-        {
-            <div class="cal-head">@d</div>
-        }
-
-        @foreach (var cell in Cells)
-        {
-            <button class="cal-cell @cell.Class"
-                    type="button"
-                    @onclick="(() => Select(cell.Date))">
-
-                <div class="cal-daynum">@cell.Date.Day</div>
-
-                @if (cell.HasEntry)
-                {
-                    <div class="cal-chips">
-                        <span class="cal-chip cal-chip-entry">Entry</span>
-
-                        @if (!string.IsNullOrWhiteSpace(cell.Mood))
-                        {
-                            <span class="cal-chip @MoodChipClass(cell.Mood)">@cell.Mood</span>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <div class="cal-sub">No entry</div>
-                }
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <button class="btn-primary"
+                    style="background: var(--bg-color); color: var(--text-primary); border: 1px solid var(--border-color);"
+                    @onclick="PrevMonth">
+                <i class="ph ph-arrow-left"></i> Prev
             </button>
-        }
+            <div class="card"
+                 style="margin: 0; padding: 0.5rem 1.5rem; font-weight: 700; background: var(--accent-light); color: var(--accent);">
+                @CurrentMonth.ToString("MMMM yyyy")
+            </div>
+            <button class="btn-primary"
+                    style="background: var(--bg-color); color: var(--text-primary); border: 1px solid var(--border-color);"
+                    @onclick="NextMonth">
+                Next <i class="ph ph-arrow-right"></i>
+            </button>
+        </div>
     </div>
 
-</section>
+    <div class="card" style="padding: 2rem;">
+        <div class="calendar-grid"
+             style="margin-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+            @foreach (var day in DaysOfWeek)
+            {
+                <div style="text-align: center; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">
+                    @day
+                </div>
+            }
+        </div>
+
+        <div class="calendar-grid">
+            @for (int i = 0; i < Offset; i++)
+            {
+                <div style="opacity: 0.3;"></div>
+            }
+
+            @foreach (var day in DaysInMonth)
+            {
+                var entry = GetEntryForDay(day);
+                <div class="calendar-day @(day.Date == DateTime.Today ? "today" : "")" @onclick="() => NavigateToDay(day)">
+                    <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.5rem;">@day.Day</div>
+
+                    @if (entry != null)
+                    {
+                        <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                            <span style="font-size: 0.65rem; background: #000; color: #fff; padding: 0.1rem 0.4rem; border-radius: 4px; width: fit-content; font-weight: 700;">Entry</span>
+                            <span class="mood-badge @GetMoodClass(entry.PrimaryMood)"
+                                  style="font-size: 0.6rem; padding: 0.1rem 0.4rem;">
+                                @entry.PrimaryMood
+                            </span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="font-size: 0.7rem; color: var(--text-secondary); opacity: 0.5;">No entry</div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
 
 @code {
-    private DateTime Current = new(DateTime.Now.Year, DateTime.Now.Month, 1);
-    private DateTime Selected = DateTime.Now.Date;
+    private DateTime CurrentMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+    private string[] DaysOfWeek = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+    private List<JournalEntry> Entries = new();
 
-    private readonly string[] DayNames = new[] { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+    private int Offset => (int)CurrentMonth.DayOfWeek;
+    private IEnumerable<DateTime> DaysInMonth => Enumerable.Range(0, DateTime.DaysInMonth(CurrentMonth.Year,
+    CurrentMonth.Month))
+    .Select(day => CurrentMonth.AddDays(day));
 
-    private List<CalCell> Cells = new();
-
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        Rebuild();
+        await LoadEntries();
     }
 
-    private void PrevMonth()
+    private async Task LoadEntries()
     {
-        Current = Current.AddMonths(-1);
-        Selected = new DateTime(Current.Year, Current.Month, 1);
-        Rebuild();
+        var start = CurrentMonth;
+        var end = CurrentMonth.AddMonths(1).AddDays(-1);
+        Entries = await DB.GetEntriesInDateRangeAsync(start, end);
     }
 
-    private void NextMonth()
+    private JournalEntry? GetEntryForDay(DateTime day) => Entries.FirstOrDefault(e => e.Date.Date == day.Date);
+
+    private async Task PrevMonth()
     {
-        Current = Current.AddMonths(1);
-        Selected = new DateTime(Current.Year, Current.Month, 1);
-        Rebuild();
+        CurrentMonth = CurrentMonth.AddMonths(-1);
+        await LoadEntries();
     }
 
-    private void Select(DateTime date)
+    private async Task NextMonth()
     {
-        Selected = date.Date;
-        Rebuild(); // so selected border updates cleanly
+        CurrentMonth = CurrentMonth.AddMonths(1);
+        await LoadEntries();
     }
 
-    private void Rebuild()
+    private void NavigateToDay(DateTime day)
     {
-        Cells = BuildCells();
-        StateHasChanged();
+        var entry = GetEntryForDay(day);
+        if (entry != null)
+            Nav.NavigateTo($"/write/{entry.Id}");
+        else if (day.Date == DateTime.Today)
+            Nav.NavigateTo("/write");
+        // For past days with no entry, we could allow creating one if we want,
+        // but requirement says "one entry per day" often implies today.
+        // However, calendar navigation usually allows backfilling.
+        else if (day.Date < DateTime.Today)
+            Nav.NavigateTo("/write"); // Simplified
     }
 
-    private List<CalCell> BuildCells()
+    private string GetMoodClass(string mood)
     {
-        var list = new List<CalCell>();
+        var positive = new[] { "Happy", "Excited", "Relaxed", "Grateful", "Confident" };
+        var neutral = new[] { "Calm", "Thoughtful", "Curious", "Nostalgic", "Bored" };
 
-        var start = new DateTime(Current.Year, Current.Month, 1);
-        var firstDayOfGrid = start.AddDays(-(int)start.DayOfWeek);
-
-        // Demo sample entries (replace later with DB/service)
-        var demo = new Dictionary<DateTime, string>
-        {
-            { new DateTime(Current.Year, Current.Month, 15), "Happy" },
-            { new DateTime(Current.Year, Current.Month, 18), "Happy" },
-            { new DateTime(Current.Year, Current.Month, 20), "Stressed" },
-            { new DateTime(Current.Year, Current.Month, 21), "Happy" },
-        };
-
-        for (int i = 0; i < 42; i++)
-        {
-            var d = firstDayOfGrid.AddDays(i);
-
-            var cls = "";
-            if (d.Month != Current.Month) cls += " muted";
-            if (d.Date == DateTime.Now.Date) cls += " today";
-            if (d.Date == Selected.Date) cls += " selected";
-
-            var has = demo.ContainsKey(d.Date);
-            var mood = has ? demo[d.Date] : "";
-
-            list.Add(new CalCell
-            {
-                Date = d,
-                Class = cls.Trim(),
-                HasEntry = has,
-                Mood = mood
-            });
-        }
-
-        return list;
-    }
-
-    private string MoodChipClass(string mood)
-    {
-        mood = mood.ToLowerInvariant();
-
-        if (mood is "happy" or "excited" or "relaxed" or "grateful" or "confident")
-            return "cal-chip-mood cal-chip-pos";
-
-        if (mood is "calm" or "thoughtful" or "curious" or "nostalgic" or "bored")
-            return "cal-chip-mood cal-chip-neu";
-
-        return "cal-chip-mood cal-chip-neg";
-    }
-
-    private class CalCell
-    {
-        public DateTime Date { get; set; }
-        public string Class { get; set; } = "";
-        public bool HasEntry { get; set; }
-        public string Mood { get; set; } = "";
+        if (positive.Contains(mood)) return "mood-positive";
+        if (neutral.Contains(mood)) return "mood-neutral";
+        return "mood-negative";
     }
 }
