@@ -1,8 +1,7 @@
-﻿using MOODJOURNAL.Models;
-using QuestPDF.Fluent;
+﻿using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using System.Reflection.Metadata;
+using MOODJOURNAL.Models;
 using Colors = QuestPDF.Helpers.Colors;
 
 namespace MOODJOURNAL.Services
@@ -13,8 +12,7 @@ namespace MOODJOURNAL.Services
         {
             QuestPDF.Settings.License = LicenseType.Community;
 
-            var document = QuestPDF.Fluent.Document.Create(container =>
-
+            var document = Document.Create(container =>
             {
                 container.Page(page =>
                 {

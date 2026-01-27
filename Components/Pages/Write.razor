@@ -3,6 +3,7 @@
 @using MOODJOURNAL.Models
 @using MOODJOURNAL.Services
 @inject DatabaseService DB
+@inject SecurityService Security
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 
@@ -31,7 +32,7 @@
         </span>
     </div>
 
-    <!-- Title and Content -->
+    @* Title and Content*@
     <div class="card">
         <input type="text" @bind="Entry.Title" placeholder="Give your entry a title..." disabled="@IsReadOnly"
                style="width: 100%; border: none; font-size: 1.5rem; font-family: 'Playfair Display', serif; font-weight: 700; margin-bottom: 1rem; outline: none; background: transparent; @(IsReadOnly ? "cursor: default; opacity: 1;" : "")" />
@@ -43,7 +44,7 @@
         </div>
     </div>
 
-    <!-- Mood Tracking -->
+    @* Mood Tracking *@
     <div class="card">
         <h3 style="margin-top: 0; font-size: 1.25rem;">Primary Mood <span style="color: var(--accent);">*</span></h3>
         <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Choose one mood that best describes your day.</p>
@@ -89,7 +90,7 @@
         </div>
     </div>
 
-    <!-- Tags and Category -->
+    @* Tags and Category *@
     <div class="card">
         <h3 style="margin-top: 0; font-size: 1.25rem;">Tags (optional)</h3>
         <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">Add custom tags and quickly reuse common ones.</p>
@@ -223,13 +224,16 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var custom = await DB.GetCategoriesAsync();
+        if (Security.CurrentUser == null) return;
+
+        var userId = Security.CurrentUser.Id;
+        var custom = await DB.GetCategoriesAsync(userId);
         var defaults = new[] { "Personal", "Work", "Health", "Travel", "Fitness", "Self-care" };
         DisplayCategories = defaults.Concat(custom.Select(c => c.Name)).Distinct().ToList();
 
         if (EntryId != 0)
         {
-            var existing = await DB.GetEntriesAsync();
+            var existing = await DB.GetEntriesAsync(userId);
             Entry = existing.FirstOrDefault(x => x.Id == EntryId) ?? new();
             EntryDate = Entry.Date;
             if (!string.IsNullOrEmpty(Entry.ContentRaw))
@@ -239,8 +243,8 @@
         }
         else
         {
-            // Check if there is already an entry for today
-            var todayEntry = await DB.GetEntryByDateAsync(DateTime.Now);
+            
+            var todayEntry = await DB.GetEntryByDateAsync(DateTime.Now, userId);
             if (todayEntry != null)
             {
                 Entry = todayEntry;
@@ -253,7 +257,7 @@
             }
             else
             {
-                Entry = new JournalEntry { Date = DateTime.Now };
+                Entry = new JournalEntry { Date = DateTime.Now, UserId = userId };
             }
         }
     }
@@ -333,7 +337,7 @@
         await DB.SaveEntryAsync(Entry);
         await JS.InvokeVoidAsync("showToast", new object[] { "Entry saved successfully!", "success" });
 
-        // Brief delay for the user to see the toast before navigating
+        
         await Task.Delay(800);
         Nav.NavigateTo("/");
     }

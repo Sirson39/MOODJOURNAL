@@ -6,13 +6,12 @@
 @inject ExportService Exporter
 @inject IJSRuntime JS
 
-
 <div class="fade-in" style="max-width: 800px; margin: 0 auto;">
     <div class="content-header">
         <h2>Settings</h2>
     </div>
 
-    <!-- Security Section -->
+    @* Security Section *@
     <div class="card">
         <h3 style="margin-top: 0; display: flex; align-items: center; gap: 0.75rem;">
             <i class="ph ph-lock" style="color: var(--accent);"></i>
@@ -42,7 +41,7 @@
         </div>
     </div>
 
-    <!-- Theme Customization -->
+    @* Theme Customization *@
     <div class="card">
         <h3 style="margin-top: 0; display: flex; align-items: center; gap: 0.75rem;">
             <i class="ph ph-palette" style="color: var(--accent);"></i>
@@ -72,7 +71,7 @@
         </div>
     </div>
 
-    <!-- Export Section -->
+    @*  Export Section *@
     <div class="card" style="border: 2px solid var(--accent-light);">
         <h3 style="margin-top: 0; display: flex; align-items: center; gap: 0.75rem;">
             <i class="ph ph-export" style="color: var(--accent);"></i>
@@ -106,7 +105,7 @@
         </div>
     </div>
 
-    <!-- Logout Section -->
+    @* Logout Section*@
     <div class="card" style="border: 1px solid var(--mood-negative);">
         <h3 style="margin-top: 0; display: flex; align-items: center; gap: 0.75rem;">
             <i class="ph ph-sign-out" style="color: var(--mood-negative-text);"></i>
@@ -143,11 +142,14 @@
 
     private async Task UpdatePin()
     {
-        if (currentPinInput == Security.GetSavedPin())
+        if (Security.CurrentUser == null) return;
+
+        if (currentPinInput == Security.CurrentUser.Password)
         {
             if (newPinInput.Length >= 4)
             {
-                Security.SetPin(newPinInput);
+                Security.CurrentUser.Password = newPinInput;
+                await DB.UpdateUserAsync(Security.CurrentUser);
                 await JS.InvokeVoidAsync("showToast", new object[] { "PIN updated successfully!", "success" });
                 currentPinInput = "";
                 newPinInput = "";
@@ -173,7 +175,8 @@
     {
         try
         {
-            var entries = await DB.GetEntriesInDateRangeAsync(exportStart, exportEnd);
+            if (Security.CurrentUser == null) return;
+            var entries = await DB.GetEntriesInDateRangeAsync(exportStart, exportEnd, Security.CurrentUser.Id);
             if (!entries.Any())
             {
                 await JS.InvokeVoidAsync("showToast", new object[] { "No entries found in this date range.", "error" });
@@ -188,7 +191,7 @@
 
             if (!Directory.Exists(downloadsPath))
             {
-                // Fallback to MyDocuments if Downloads doesn't exist for some reason
+                
                 downloadsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             }
 

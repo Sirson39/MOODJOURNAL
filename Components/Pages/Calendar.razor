@@ -2,6 +2,7 @@
 @using MOODJOURNAL.Models
 @using MOODJOURNAL.Services
 @inject DatabaseService DB
+@inject SecurityService Security
 @inject NavigationManager Nav
 
 <div class="fade-in">
@@ -88,9 +89,10 @@
 
     private async Task LoadEntries()
     {
+        if (Security.CurrentUser == null) return;
         var start = CurrentMonth;
         var end = CurrentMonth.AddMonths(1).AddDays(-1);
-        Entries = await DB.GetEntriesInDateRangeAsync(start, end);
+        Entries = await DB.GetEntriesInDateRangeAsync(start, end, Security.CurrentUser.Id);
     }
 
     private JournalEntry? GetEntryForDay(DateTime day) => Entries.FirstOrDefault(e => e.Date.Date == day.Date);
@@ -114,11 +116,8 @@
             Nav.NavigateTo($"/write/{entry.Id}");
         else if (day.Date == DateTime.Today)
             Nav.NavigateTo("/write");
-        // For past days with no entry, we could allow creating one if we want,
-        // but requirement says "one entry per day" often implies today.
-        // However, calendar navigation usually allows backfilling.
         else if (day.Date < DateTime.Today)
-            Nav.NavigateTo("/write"); // Simplified
+            Nav.NavigateTo("/write");
     }
 
     private string GetMoodClass(string mood)

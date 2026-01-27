@@ -2,63 +2,68 @@
 @using MOODJOURNAL.Components
 @inject SecurityService Security
 
-<LockScreen OnUnlocked="StateHasChanged" />
+@if (Security.IsLocked)
+{
+    <LockScreen OnUnlocked="StateHasChanged" />
+}
+else
+{
+    <div class="app-container fade-in">
+        <aside class="sidebar-nav">
+            <NavLink href="" class="brand" style="text-decoration: none; color: inherit; display: flex; cursor: pointer;">
+                <div class="brand-icon">
+                    <i class="ph-fill ph-notebook"></i>
+                </div>
+                <div class="brand-text">
+                    <h1 class="brand-font">MoodJournal</h1>
+                    <p>Your Journal</p>
+                </div>
+            </NavLink>
 
-<div class="app-container">
-    <aside class="sidebar-nav">
-        <div class="brand">
-            <div class="brand-icon">
-                <i class="ph-fill ph-notebook"></i>
+            <nav class="nav-links">
+                <NavLink class="nav-item" href="" Match="NavLinkMatch.All">
+                    <i class="ph ph-squares-four"></i>
+                    Dashboard
+                </NavLink>
+                <NavLink class="nav-item" href="write">
+                    <i class="ph ph-pencil-line"></i>
+                    Write
+                </NavLink>
+                <NavLink class="nav-item" href="calendar">
+                    <i class="ph ph-calendar-blank"></i>
+                    Calendar
+                </NavLink>
+                <NavLink class="nav-item" href="timeline">
+                    <i class="ph ph-list-dashes"></i>
+                    Timeline
+                </NavLink>
+                <NavLink class="nav-item" href="analytics">
+                    <i class="ph ph-chart-line-up"></i>
+                    Analytics
+                </NavLink>
+                <NavLink class="nav-item" href="tags">
+                    <i class="ph ph-tag"></i>
+                    Tags & Categories
+                </NavLink>
+                <NavLink class="nav-item" href="settings">
+                    <i class="ph ph-gear"></i>
+                    Settings
+                </NavLink>
+            </nav>
+
+            <div style="margin-top: auto;">
+                <div class="card"
+                     style="padding: 1rem; background-color: rgba(196, 98, 16, 0.03); border: 1px dashed var(--border-color);">
+                    <p style="font-size: 0.8rem; margin: 0; color: var(--text-secondary); line-height: 1.4;">
+                        <strong>Quick Tips</strong><br />
+                        One entry per day • Track moods • Keep it honest, keep it simple
+                    </p>
+                </div>
             </div>
-            <div class="brand-text">
-                <h1 class="brand-font">MoodJournal</h1>
-                <p>Your Journal</p>
-            </div>
-        </div>
+        </aside>
 
-        <nav class="nav-links">
-            <NavLink class="nav-item" href="" Match="NavLinkMatch.All">
-                <i class="ph ph-squares-four"></i>
-                Dashboard
-            </NavLink>
-            <NavLink class="nav-item" href="write">
-                <i class="ph ph-pencil-line"></i>
-                Write
-            </NavLink>
-            <NavLink class="nav-item" href="calendar">
-                <i class="ph ph-calendar-blank"></i>
-                Calendar
-            </NavLink>
-            <NavLink class="nav-item" href="timeline">
-                <i class="ph ph-list-dashes"></i>
-                Timeline
-            </NavLink>
-            <NavLink class="nav-item" href="analytics">
-                <i class="ph ph-chart-line-up"></i>
-                Analytics
-            </NavLink>
-            <NavLink class="nav-item" href="tags">
-                <i class="ph ph-tag"></i>
-                Tags & Categories
-            </NavLink>
-            <NavLink class="nav-item" href="settings">
-                <i class="ph ph-gear"></i>
-                Settings
-            </NavLink>
-        </nav>
-
-        <div style="margin-top: auto;">
-            <div class="card"
-                 style="padding: 1rem; background-color: rgba(196, 98, 16, 0.03); border: 1px dashed var(--border-color);">
-                <p style="font-size: 0.8rem; margin: 0; color: var(--text-secondary); line-height: 1.4;">
-                    <strong>Quick Tips</strong><br />
-                    One entry per day • Track moods • Keep it honest, keep it simple
-                </p>
-            </div>
-        </div>
-    </aside>
-
-    <main class="main-content">
-        @Body
-    </main>
-</div>
+        <main class="main-content">
+            @Body
+        </main>
+    </div>
+}

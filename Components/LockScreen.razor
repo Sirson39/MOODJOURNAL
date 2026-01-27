@@ -3,72 +3,152 @@
 @if (Security.IsLocked)
 {
     <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg-color); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 2rem;">
-        <div class="card" style="width: 100%; max-width: 500px; padding: 3rem; text-align: left;">
-            <h2 class="brand-font" style="font-size: 2rem; margin-top: 0;">Unlock MoodJournal</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 2rem;">
-                Enter PIN/password to access your private entries.
-            </p>
-
-            <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
-                <span style="background: var(--bg-color); border: 1px solid var(--border-color); padding: 0.2rem 0.6rem; border-radius: 50px; font-size: 0.75rem; font-weight: 600;">
-                    Local
-                    • Private
-                </span>
+        <div class="card fade-in" style="width: 100%; max-width: 480px; padding: 3.5rem; border-radius: var(--radius-lg); box-shadow: 0 20px 60px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 2.5rem;">
+                <div class="brand-icon" style="margin: 0 auto 1.5rem; width: 60px; height: 60px; font-size: 2rem;">
+                    <i class="ph-fill ph-notebook"></i>
+                </div>
+                <h2 class="brand-font" style="font-size: 2.2rem; margin: 0;">Welcome Back</h2>
+                <p style="color: var(--text-secondary); margin-top: 0.5rem;">Your private thoughts, safely stored.</p>
             </div>
 
-            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">
-                PIN /
-                Password
-            </label>
-            <input type="password" @bind="pinInput"
-                   style="width: 100%; padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; margin-bottom: 1.5rem; background: #fff;" />
-
-            @if (!string.IsNullOrEmpty(errorMessage))
-            {
-                <p style="color: #dc3545; font-size: 0.85rem; margin-bottom: 1rem;">@errorMessage</p>
-            }
-
-            <div style="display: flex; gap: 1rem;">
-                <button class="btn-primary" style="padding: 1rem 2rem;" @onclick="TryUnlock">Unlock</button>
-                <button @onclick="Clear"
-                        style="background: #fff; border: 1px solid var(--border-color); padding: 1rem 2rem; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;">
-                    Clear
+            @*  Toggle Tabs  *@
+            <div style="display: flex; background: var(--bg-color); padding: 0.4rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid var(--border-color);">
+                <button @onclick="() => SetMode(false)"
+                        style="flex: 1; padding: 0.75rem; border: none; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; @(!isRegisterMode ? "background: white; color: var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.05);" : "background: transparent; color: var(--text-secondary);")">
+                    Login
+                </button>
+                <button @onclick="() => SetMode(true)"
+                        style="flex: 1; padding: 0.75rem; border: none; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; @(isRegisterMode ? "background: white; color: var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.05);" : "background: transparent; color: var(--text-secondary);")">
+                    Register
                 </button>
             </div>
 
-            <hr style="margin: 2.5rem 0; border: 0; border-top: 1px solid var(--border-color);" />
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 800; color: var(--text-secondary); margin-bottom: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em;">Username</label>
+                    <div style="position: relative;">
+                        <i class="ph ph-user" style="position: absolute; left: 1rem; top: 1rem; color: var(--text-secondary); font-size: 1.2rem;"></i>
+                        @if (isRegisterMode)
+                        {
+                            <input type="text" @bind="registerUsername" placeholder="Create username"
+                                   style="width: 100%; padding: 1rem 1rem 1rem 3rem; border: 1px solid var(--border-color); border-radius: 12px; font-size: 1rem; background: #fff; transition: border-color 0.2s;" />
+                        }
+                        else
+                        {
+                            <input type="text" @bind="loginUsername" placeholder="Enter username"
+                                   style="width: 100%; padding: 1rem 1rem 1rem 3rem; border: 1px solid var(--border-color); border-radius: 12px; font-size: 1rem; background: #fff; transition: border-color 0.2s;" />
+                        }
+                    </div>
+                </div>
 
-            <p style="font-size: 0.75rem; color: var(--text-secondary);">
-                <strong> Reminder:</strong> Don’t share your PIN with anyone.<br>
-                You can implement real security later in Settings.
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 800; color: var(--text-secondary); margin-bottom: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em;">Password / PIN</label>
+                    <div style="position: relative;">
+                        <i class="ph ph-lock" style="position: absolute; left: 1rem; top: 1rem; color: var(--text-secondary); font-size: 1.2rem;"></i>
+                        @if (isRegisterMode)
+                        {
+                            <input type="password" @bind="registerPin" placeholder="Create PIN or password"
+                                   style="width: 100%; padding: 1rem 1rem 1rem 3rem; border: 1px solid var(--border-color); border-radius: 12px; font-size: 1rem; background: #fff; transition: border-color 0.2s;" />
+                        }
+                        else
+                        {
+                            <input type="password" @bind="loginPin" placeholder="••••"
+                                   style="width: 100%; padding: 1rem 1rem 1rem 3rem; border: 1px solid var(--border-color); border-radius: 12px; font-size: 1rem; background: #fff; transition: border-color 0.2s;" />
+                        }
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div style="background: rgba(220, 53, 69, 0.05); color: #dc3545; padding: 0.75rem; border-radius: 8px; font-size: 0.85rem; border: 1px solid rgba(220, 53, 69, 0.1);">
+                        @errorMessage
+                    </div>
+                }
+
+                <button class="btn-primary"
+                        style="width: 100%; padding: 1.1rem; border-radius: 12px; justify-content: center; font-size: 1.1rem; margin-top: 1rem;"
+                        @onclick="HandleAuth">
+                    @(isRegisterMode ? "Create Account" : "Unlock Journal")
+                </button>
+            </div>
+
+            <p style="text-align: center; font-size: 0.85rem; color: var(--text-secondary); margin-top: 2rem;">
+                <i class="ph ph-shield-check" style="vertical-align: middle;"></i> Secure, Local Storage
             </p>
         </div>
     </div>
 }
 
 @code {
-    private string pinInput = "";
+    private string loginUsername = "";
+    private string loginPin = "";
+    private string registerUsername = "";
+    private string registerPin = "";
+
     private string errorMessage = "";
+    private bool isRegisterMode = false;
 
     [Parameter] public EventCallback OnUnlocked { get; set; }
 
-    private async Task TryUnlock()
+    private void SetMode(bool register)
     {
-        if (Security.Unlock(pinInput))
-        {
-            errorMessage = "";
-            await OnUnlocked.InvokeAsync();
-        }
-        else
-        {
-            errorMessage = "Invalid PIN. Please try again.";
-            pinInput = "";
-        }
+        isRegisterMode = register;
+        errorMessage = "";
+
+        // Clear all inputs for a fresh start
+        loginUsername = "";
+        loginPin = "";
+        registerUsername = "";
+        registerPin = "";
     }
 
-    private void Clear()
+    private async Task HandleAuth()
     {
-        pinInput = "";
-        errorMessage = "";
+        try
+        {
+            string username = isRegisterMode ? registerUsername : loginUsername;
+            string pin = isRegisterMode ? registerPin : loginPin;
+
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(pin))
+            {
+                errorMessage = "Please enter both username and password.";
+                return;
+            }
+
+            bool success;
+            if (isRegisterMode)
+            {
+                success = await Security.Register(username, pin);
+                if (!success)
+                {
+                    errorMessage = "Username already exists.";
+                    return;
+                }
+            }
+            else
+            {
+                success = await Security.Login(username, pin);
+                if (!success)
+                {
+                    errorMessage = "Invalid username or password.";
+                    return;
+                }
+            }
+
+            if (success)
+            {
+                errorMessage = "";
+                loginUsername = "";
+                loginPin = "";
+                registerUsername = "";
+                registerPin = "";
+                await OnUnlocked.InvokeAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "System Error: " + ex.Message;
+        }
     }
 }

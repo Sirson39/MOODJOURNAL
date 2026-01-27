@@ -2,12 +2,13 @@
 @using MOODJOURNAL.Models
 @using MOODJOURNAL.Services
 @inject DatabaseService DB
+@inject SecurityService Security
 @inject IJSRuntime JS
 
 <div class="fade-in">
     <div class="content-header">
         <div>
-            <h2>Welcome back</h2>
+            <h2>Welcome back, @(Security.CurrentUser?.Username ?? "User")</h2>
             <p style="color: var(--text-secondary);">@DateTime.Now.ToString("dddd, MMMM dd, yyyy")</p>
         </div>
         <button class="btn-primary" @onclick='() => Nav.NavigateTo("/write")'>
@@ -17,7 +18,7 @@
     </div>
 
     <div class="dashboard-grid">
-        <!-- Stats Card -->
+        @* Stats Card > *@
         <div class="card span-2">
             <h3 style="margin-top: 0; font-size: 1.2rem;">Your Journey</h3>
             <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Streaks, entries, and missed days.</p>
@@ -46,7 +47,7 @@
             </div>
         </div>
 
-        <!-- Mood Distribution -->
+        @* Mood Distribution *@
         <div class="card">
             <h3 style="margin-top: 0; font-size: 1.1rem;">Mood Distribution</h3>
             @if (TotalEntries > 0)
@@ -64,7 +65,7 @@
             }
         </div>
 
-        <!-- Recent Entries -->
+        @* Recent Entries*@
         <div class="card span-2">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h3 style="margin: 0; font-size: 1.1rem;">Recent Entries</h3>
@@ -97,7 +98,7 @@
             }
         </div>
 
-        <!-- Popular Tags -->
+        @* Popular Tags *@
         <div class="card">
             <h3 style="margin-top: 0; font-size: 1.1rem;">Popular Tags</h3>
             <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem;">
@@ -131,14 +132,14 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var entries = await DB.GetEntriesAsync();
+        if (Security.CurrentUser == null) return;
+
+        var entries = await DB.GetEntriesAsync(Security.CurrentUser.Id);
         TotalEntries = entries.Count;
         RecentEntries = entries.Take(3).ToList();
 
-        // Mocking streaks for now - logic to be implemented in Phase 5
         CalculateStreaks(entries);
 
-        // Extract popular tags
         PopularTags = entries.SelectMany(x => x.Tags).GroupBy(x => x).OrderByDescending(g => g.Count()).Take(5).Select(g => g.Key).ToList();
 
         Entries = entries;

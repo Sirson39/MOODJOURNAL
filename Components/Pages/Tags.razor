@@ -2,6 +2,7 @@
 @using MOODJOURNAL.Models
 @using MOODJOURNAL.Services
 @inject DatabaseService DB
+@inject SecurityService Security
 
 <div class="fade-in">
     <div class="content-header">
@@ -12,7 +13,7 @@
     </div>
 
     <div class="dashboard-grid">
-        <!-- Tags Card -->
+        @* Tags Card *@
         <div class="card span-2">
             <h3 style="margin-top: 0;">Your Tags</h3>
             <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 2rem;">A complete list of all tags you've used in your journal.</p>
@@ -35,14 +36,14 @@
             </div>
         </div>
 
-        <!-- Categories Card -->
+        @* Categories Card *@
         <div class="card">
             <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center;">
                 Categories
                 <small style="font-size: 0.7rem; color: var(--text-secondary); font-weight: 400;">Manage & Organize</small>
             </h3>
 
-            <!-- Add Category UI -->
+            @*  Add Category UI *@
             <div style="display: flex; gap: 0.5rem; margin-bottom: 2rem;">
                 <input type="text" @bind="newCategoryName" placeholder="New category name..."
                        style="flex: 1; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.9rem;" />
@@ -76,7 +77,6 @@
                         <div style="display: flex; align-items: center; gap: 0.75rem;">
                             <i class="ph-fill ph-folder" style="color: var(--accent);"></i>
                             <span style="font-weight: 600;">@cat.Name</span>
-                            <span style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 800; color: var(--mood-positive-text); background: var(--mood-positive); padding: 2px 6px; border-radius: 4px; margin-left: 0.25rem;">Custom</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 1rem;">
                             <span style="font-size: 0.85rem; font-weight: 700; opacity: 0.6;">@(stats?.Count ?? 0)</span>
@@ -109,8 +109,10 @@
 
     private async Task LoadData()
     {
-        var entries = await DB.GetEntriesAsync();
-        CustomCategories = await DB.GetCategoriesAsync();
+        if (Security.CurrentUser == null) return;
+        var userId = Security.CurrentUser.Id;
+        var entries = await DB.GetEntriesAsync(userId);
+        CustomCategories = await DB.GetCategoriesAsync(userId);
 
         AllTags = entries.SelectMany(x => x.Tags)
                          .GroupBy(x => x)
@@ -136,7 +138,7 @@
             return;
         }
 
-        var newCat = new Category { Name = name };
+        var newCat = new Category { Name = name, UserId = Security.CurrentUser!.Id };
         await DB.SaveCategoryAsync(newCat);
         newCategoryName = "";
         await LoadData();

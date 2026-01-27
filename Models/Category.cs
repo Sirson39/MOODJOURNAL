@@ -7,7 +7,9 @@ namespace MOODJOURNAL.Models
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
 
-        [Unique, Indexed]
+        [Indexed]
+        public int UserId { get; set; }
+
         public string Name { get; set; } = "";
 
         public string Color { get; set; } = "#C46210"; // Default accent color

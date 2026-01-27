@@ -2,6 +2,7 @@
 @using MOODJOURNAL.Models
 @using MOODJOURNAL.Services
 @inject DatabaseService DB
+@inject SecurityService Security
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 
@@ -115,7 +116,7 @@
             }
         </div>
 
-        <!-- Pagination Controls -->
+        
         <div style="display: flex; justify-content: center; align-items: center; gap: 2rem; margin-top: 3rem; padding-bottom: 5rem;">
             <button class="btn-primary" disabled="@(CurrentPage == 1)" @onclick="PrevPage" style="background: var(--card-bg); color: var(--text-primary); border: 1px solid var(--border-color);">
                 <i class="ph ph-caret-left"></i> Previous
@@ -160,14 +161,14 @@
     private string SearchQuery = "";
     private bool ShowFilters = false;
 
-    // Filters
+    
     private DateTime? StartDate;
     private DateTime? EndDate;
     private string FilterMood = "";
     private string FilterCategory = "";
     private int ActiveFiltersCount = 0;
 
-    // Pagination
+    
     private int CurrentPage = 1;
     private int PageSize = 5;
     private int TotalPages => (int)Math.Ceiling((double)FilteredEntries.Count / PageSize);
@@ -175,7 +176,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        AllEntries = await DB.GetEntriesAsync();
+        if (Security.CurrentUser == null) return;
+        AllEntries = await DB.GetEntriesAsync(Security.CurrentUser.Id);
         ApplyFilters();
     }
 

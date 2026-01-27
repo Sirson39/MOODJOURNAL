@@ -2,6 +2,7 @@
 @using MOODJOURNAL.Models
 @using MOODJOURNAL.Services
 @inject DatabaseService DB
+@inject SecurityService Security
 @inject IJSRuntime JS
 
 <div class="fade-in">
@@ -13,6 +14,7 @@
     </div>
 
     <div class="dashboard-grid">
+        @* // Mood Distribution *@
         <div class="card">
             <h3 style="margin-top: 0; font-size: 1.1rem;">Mood Distribution</h3>
             <canvas id="moodChart" style="max-height: 250px;"></canvas>
@@ -31,19 +33,19 @@
             </div>
         </div>
 
-        <!-- Word Count Trend -->
+        @* Word Count Trend  *@
         <div class="card span-2">
             <h3 style="margin-top: 0; font-size: 1.1rem;">Word Count Trends</h3>
             <canvas id="wordChart" style="max-height: 350px;"></canvas>
         </div>
 
-        <!-- Tag Breakdown -->
+        @* Tag Breakdown *@
         <div class="card span-2">
             <h3 style="margin-top: 0; font-size: 1.1rem;">Tag Breakdown</h3>
             <canvas id="tagChart" style="max-height: 300px;"></canvas>
         </div>
 
-        <!-- Fun Stats -->
+        @* Fun Stats *@
         <div class="card">
             <h3 style="margin-top: 0; font-size: 1.1rem;">Journaling Stats</h3>
             <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-top: 1rem;">
@@ -72,6 +74,7 @@
 </div>
 
 @code {
+    // Data loaded from database for the logged-in user
     private List<JournalEntry> Entries = new();
     private string TopMood = "N/A";
     private string TopMoodEmoji = "😶";
@@ -82,7 +85,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        Entries = await DB.GetEntriesAsync();
+        // If not logged in, don't load analytics
+        if (Security.CurrentUser == null) return;
+        Entries = await DB.GetEntriesAsync(Security.CurrentUser.Id);
 
         if (Entries.Any())
         {
@@ -92,6 +97,8 @@
             TopMoodCount = top.Count();
             TopMoodEmoji = GetMoodEmoji(TopMood);
 
+
+            // Total words across all entries
             TotalWords = Entries.Sum(x => x.ContentRaw.Split(new[] { ' ', '\n', '\r' },
             StringSplitOptions.RemoveEmptyEntries).Length);
             AvgWords = (int)(TotalWords / Entries.Count);

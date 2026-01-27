@@ -12,6 +12,9 @@ namespace MOODJOURNAL.Models
         [Indexed]
         public DateTime Date { get; set; }
 
+        [Indexed]
+        public int UserId { get; set; }
+
         public string Title { get; set; } = string.Empty;
 
         public string Content { get; set; } = string.Empty; // HTML Content
