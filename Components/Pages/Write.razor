@@ -60,7 +60,7 @@
                         {
                             <button @onclick="() => { if (!IsReadOnly) SetPrimaryMood(mood); }"
                                     class="mood-btn @(Entry.PrimaryMood == mood ? "active-" + category.Key.ToLower() : "")"
-                                    style="display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; border-radius: 50px; border: 1px solid var(--border-color); background: #fff; cursor: @(IsReadOnly ? "default" : "pointer"); transition: all 0.2s; font-size: 0.9rem; font-weight: 500; @(IsReadOnly && Entry.PrimaryMood != mood ? "opacity: 0.5;" : "")">
+                                    style="display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.1rem; border-radius: 50px; border: 1px solid var(--border-color); background: #fff; cursor: @(IsReadOnly ? "default" : "pointer"); transition: all 0.2s; font-size: 1rem; font-weight: 500; @(IsReadOnly && Entry.PrimaryMood != mood ? "opacity: 0.5;" : "")">
                                 @GetMoodEmoji(mood) @mood
                             </button>
                         }
@@ -81,7 +81,7 @@
                 {
                     <button @onclick="() => { if (!IsReadOnly) ToggleSecondaryMood(mood); }"
                             class="mood-btn @(Entry.SecondaryMoods.Contains(mood) ? "active-secondary" : "")"
-                            style="display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.8rem; border-radius: 50px; border: 1px solid var(--border-color); background: #fff; cursor: @(IsReadOnly ? "default" : "pointer"); font-size: 0.85rem; @(IsReadOnly && !Entry.SecondaryMoods.Contains(mood) ? "opacity: 0.5;" : "")">
+                            style="display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.9rem; border-radius: 50px; border: 1px solid var(--border-color); background: #fff; cursor: @(IsReadOnly ? "default" : "pointer"); font-size: 0.95rem; @(IsReadOnly && !Entry.SecondaryMoods.Contains(mood) ? "opacity: 0.5;" : "")">
                         @GetMoodEmoji(mood) @mood
                     </button>
                 }
@@ -107,7 +107,7 @@
             <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem;">
                 @foreach (var tag in Entry.Tags)
                 {
-                    <span style="background: var(--accent-light); color: var(--accent); padding: 0.4rem 0.75rem; border-radius: 50px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="background: var(--accent-light); color: var(--accent); padding: 0.45rem 0.85rem; border-radius: 50px; font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
                         #@tag
                         @if (!IsReadOnly)
                         {
@@ -126,7 +126,7 @@
                     @foreach (var tag in PrebuiltTags)
                     {
                         <button @onclick="() => ToggleTag(tag)"
-                                style="padding: 0.4rem 0.8rem; border-radius: 50px; border: 1px solid var(--border-color); background: #fff; cursor: pointer; font-size: 0.8rem; color: var(--text-primary);">
+                                style="padding: 0.45rem 0.9rem; border-radius: 50px; border: 1px solid var(--border-color); background: #fff; cursor: pointer; font-size: 0.9rem; color: var(--text-primary);">
                             @tag
                         </button>
                     }

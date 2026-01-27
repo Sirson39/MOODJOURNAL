@@ -20,7 +20,7 @@
                 PIN /
                 Password
             </label>
-            <input type="password" @bind="pinInput" placeholder="Demo PIN: 1234"
+            <input type="password" @bind="pinInput"
                    style="width: 100%; padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; margin-bottom: 1.5rem; background: #fff;" />
 
             @if (!string.IsNullOrEmpty(errorMessage))
@@ -39,7 +39,8 @@
             <hr style="margin: 2.5rem 0; border: 0; border-top: 1px solid var(--border-color);" />
 
             <p style="font-size: 0.75rem; color: var(--text-secondary);">
-                Milestone mode: PIN = <strong>1234</strong>. You can implement real security later in Settings.
+                <strong> Reminder:</strong> Don’t share your PIN with anyone.<br>
+                You can implement real security later in Settings.
             </p>
         </div>
     </div>

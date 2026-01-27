@@ -6,6 +6,7 @@
 @inject ExportService Exporter
 @inject IJSRuntime JS
 
+
 <div class="fade-in" style="max-width: 800px; margin: 0 auto;">
     <div class="content-header">
         <h2>Settings</h2>
@@ -116,7 +117,8 @@
             and return to the lock screen.
         </p>
         <button class="btn-primary"
-                style="background: var(--mood-negative); color: var(--mood-negative-text); border: none;" @onclick="Logout">
+                style="background: var(--mood-negative); color: var(--mood-negative-text); border: none; width: fit-content;"
+                @onclick="Logout">
             <i class="ph ph-lock"></i> Logout & Lock
         </button>
     </div>
