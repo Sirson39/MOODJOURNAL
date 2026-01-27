@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
-using MOODJournal.Services;
+using MOODJOURNAL.Services;
 
-namespace MOODJournal
+namespace MOODJOURNAL
 {
     public static class MauiProgram
     {

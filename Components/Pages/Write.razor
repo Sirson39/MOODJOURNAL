@@ -1,9 +1,9 @@
 ﻿@page "/write"
 @page "/write/{EntryId:int}"
-@using MOODJournal.Models
-@using MOODJournal.Services
+@using MOODJOURNAL.Models
+@using MOODJOURNAL.Services
 @inject DatabaseService DB
-@inject IJSRuntime JSRuntime
+@inject IJSRuntime JS
 @inject NavigationManager Nav
 
 <div class="fade-in" style="max-width: 900px; margin: 0 auto;">
@@ -209,6 +209,10 @@
             var existing = await DB.GetEntriesAsync();
             Entry = existing.FirstOrDefault(x => x.Id == EntryId) ?? new();
             EntryDate = Entry.Date;
+            if (!string.IsNullOrEmpty(Entry.ContentRaw))
+            {
+                UpdateWordCount(Entry.ContentRaw);
+            }
         }
         else
         {
@@ -219,6 +223,10 @@
                 Entry = todayEntry;
                 EntryId = Entry.Id;
                 EntryDate = Entry.Date;
+                if (!string.IsNullOrEmpty(Entry.ContentRaw))
+                {
+                    UpdateWordCount(Entry.ContentRaw);
+                }
             }
             else
             {
@@ -227,12 +235,34 @@
         }
     }
 
+    private DotNetObjectReference<Write>? objRef;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            await JSRuntime.InvokeVoidAsync("initQuill", "editor", Entry.Content);
+            objRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("initQuill", new object[] { "editor", Entry.Content, objRef });
         }
+    }
+
+    [JSInvokable]
+    public void UpdateWordCount(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            WordCount = 0;
+        }
+        else
+        {
+            WordCount = text.Split(new[] { ' ', '\r', '\n', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length;
+        }
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        objRef?.Dispose();
     }
 
     private void SetPrimaryMood(string mood) => Entry.PrimaryMood = mood;
@@ -269,13 +299,13 @@
     {
         if (string.IsNullOrEmpty(Entry.PrimaryMood))
         {
-            await JSRuntime.InvokeVoidAsync("alert", "Please select a primary mood.");
+            await JS.InvokeVoidAsync("alert", new object[] { "Please select a primary mood." });
             return;
         }
 
         // Get content from Quill
-        Entry.Content = await JSRuntime.InvokeAsync<string>("getQuillContent", "editor");
-        Entry.ContentRaw = await JSRuntime.InvokeAsync<string>("getQuillText", "editor");
+        Entry.Content = await JS.InvokeAsync<string>("getQuillContent", new object[] { "editor" });
+        Entry.ContentRaw = await JS.InvokeAsync<string>("getQuillText", new object[] { "editor" });
 
         await DB.SaveEntryAsync(Entry);
         Nav.NavigateTo("/");

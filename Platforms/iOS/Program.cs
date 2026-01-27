@@ -1,7 +1,7 @@
 ﻿using ObjCRuntime;
 using UIKit;
 
-namespace MOODJournal
+namespace MOODJOURNAL
 {
     public class Program
     {

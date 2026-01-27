@@ -1,4 +1,4 @@
-﻿namespace MOODJournal.Services
+﻿namespace MOODJOURNAL.Services
 {
     public class SecurityService
     {

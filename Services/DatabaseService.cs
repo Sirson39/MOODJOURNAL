@@ -1,8 +1,8 @@
 ﻿using SQLite;
-using MOODJournal.Models;
+using MOODJOURNAL.Models;
 using System.Text.Json;
 
-namespace MOODJournal.Services
+namespace MOODJOURNAL.Services
 {
     public class DatabaseService
     {

@@ -1,7 +1,8 @@
 @page "/timeline"
-@using MOODJournal.Models
-@using MOODJournal.Services
+@using MOODJOURNAL.Models
+@using MOODJOURNAL.Services
 @inject DatabaseService DB
+@inject IJSRuntime JS
 @inject NavigationManager Nav
 
 <div class="fade-in">
@@ -13,7 +14,7 @@
         <div style="display: flex; gap: 1rem; align-items: center;">
             <div style="position: relative;">
                 <i class="ph ph-magnifying-glass" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary);"></i>
-                <input type="text" @bind="SearchQuery" @bind:event="oninput" @onkeyup="HandleSearch" placeholder="Search title or content..." 
+                <input type="text" @bind="SearchQuery" @bind:event="oninput" @onkeyup="HandleSearch" placeholder="Search title or content..."
                        style="padding: 0.75rem 1rem 0.75rem 2.5rem; border: 1px solid var(--border-color); border-radius: 50px; font-size: 0.9rem; width: 300px;" />
             </div>
             <button class="btn-primary" @onclick="ToggleFilters" style="background: var(--bg-color); color: var(--text-primary); border: 1px solid var(--border-color);">
@@ -35,15 +36,15 @@
                     </div>
                 </div>
                 <div>
-                     <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.5rem;">PRIMARY MOOD</label>
-                     <select @bind="FilterMood" style="width: 100%; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border-color);">
-                         <option value="">Any Mood</option>
-                         <option value="Happy">Happy</option>
-                         <option value="Excited">Excited</option>
-                         <option value="Calm">Calm</option>
-                         <option value="Sad">Sad</option>
-                         <option value="Angry">Angry</option>
-                     </select>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.5rem;">PRIMARY MOOD</label>
+                    <select @bind="FilterMood" style="width: 100%; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <option value="">Any Mood</option>
+                        <option value="Happy">Happy</option>
+                        <option value="Excited">Excited</option>
+                        <option value="Calm">Calm</option>
+                        <option value="Sad">Sad</option>
+                        <option value="Angry">Angry</option>
+                    </select>
                 </div>
                 <div>
                     <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.5rem;">CATEGORY</label>
@@ -69,7 +70,14 @@
             {
                 <div class="card" @onclick='() => Nav.NavigateTo($"/write/{entry.Id}")' style="cursor: pointer; padding: 2rem; position: relative; overflow: hidden; transition: transform 0.2s;">
                     <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 6px;" class="bg-@(GetMoodGroup(entry.PrimaryMood))"></div>
-                    
+
+                    <button @onclick="() => DeleteEntry(entry)" @onclick:stopPropagation="true"
+                            style="position: absolute; bottom: 1.5rem; right: 1.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10;"
+                            onmouseover="this.style.background='var(--mood-negative)'; this.style.color='var(--mood-negative-text)'"
+                            onmouseout="this.style.background='transparent'; this.style.color='var(--text-secondary)'">
+                        <i class="ph ph-trash" style="font-size: 1.25rem;"></i>
+                    </button>
+
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
                         <div>
                             <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 0.25rem;">
@@ -78,7 +86,7 @@
                             <h3 style="margin: 0; font-size: 1.5rem;">@entry.Title</h3>
                         </div>
                         <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem;">
-                             <span class="mood-badge @GetMoodClass(entry.PrimaryMood)">
+                            <span class="mood-badge @GetMoodClass(entry.PrimaryMood)">
                                 @entry.PrimaryMood
                             </span>
                             @if (!string.IsNullOrEmpty(entry.Category))
@@ -129,10 +137,21 @@
 </div>
 
 <style>
-    .bg-positive { background-color: var(--mood-positive-text); }
-    .bg-neutral { background-color: var(--mood-neutral-text); }
-    .bg-negative { background-color: var(--mood-negative-text); }
-    .card:hover { transform: translateY(-3px); }
+    .bg-positive {
+        background-color: var(--mood-positive-text);
+    }
+
+    .bg-neutral {
+        background-color: var(--mood-neutral-text);
+    }
+
+    .bg-negative {
+        background-color: var(--mood-negative-text);
+    }
+
+    .card:hover {
+        transform: translateY(-3px);
+    }
 </style>
 
 @code {
@@ -140,7 +159,7 @@
     private List<JournalEntry> FilteredEntries = new();
     private string SearchQuery = "";
     private bool ShowFilters = false;
-    
+
     // Filters
     private DateTime? StartDate;
     private DateTime? EndDate;
@@ -173,8 +192,8 @@
 
         if (!string.IsNullOrWhiteSpace(SearchQuery))
         {
-            filtered = filtered.Where(x => x.Title.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) || 
-                                          x.ContentRaw.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
+            filtered = filtered.Where(x => x.Title.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ||
+                                           x.ContentRaw.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
         }
 
         ActiveFiltersCount = 0;
@@ -185,6 +204,18 @@
 
         FilteredEntries = filtered.ToList();
         CurrentPage = 1;
+    }
+
+    private async Task DeleteEntry(JournalEntry entry)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", new object[] { $"Are you sure you want to delete '{entry.Title}'?" });
+        if (confirmed)
+        {
+            await DB.DeleteEntryAsync(entry);
+            AllEntries.Remove(entry);
+            ApplyFilters();
+            StateHasChanged();
+        }
     }
 
     private void ClearFilters()
