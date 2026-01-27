@@ -8,6 +8,7 @@ namespace MOODJOURNAL.Services
     {
         private SQLiteAsyncConnection? _database;
         private readonly string _dbPath;
+        private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
         public DatabaseService()
         {
@@ -19,8 +20,54 @@ namespace MOODJOURNAL.Services
             if (_database is not null)
                 return;
 
-            _database = new SQLiteAsyncConnection(_dbPath);
-            await _database.CreateTableAsync<JournalEntry>();
+            await _semaphore.WaitAsync();
+            try
+            {
+                if (_database is not null)
+                    return;
+
+                _database = new SQLiteAsyncConnection(_dbPath);
+
+                // Isolate table creation to identify failure point
+                await _database.CreateTableAsync<JournalEntry>();
+
+                try
+                {
+                    // Ensure table exists
+                    await _database.CreateTableAsync<Category>();
+
+                    // Force-flag defaults based on names to repair any existing but unmarked categories
+                    var defaultNames = new[] { "Personal", "Work", "Health", "Travel", "Fitness", "Self-care" };
+
+                    foreach (var name in defaultNames)
+                    {
+                        var existing = await _database.Table<Category>().Where(c => c.Name == name).FirstOrDefaultAsync();
+                        if (existing == null)
+                        {
+                            await _database.InsertAsync(new Category { Name = name, IsDefault = true });
+                        }
+                        else if (!existing.IsDefault)
+                        {
+                            existing.IsDefault = true;
+                            await _database.UpdateAsync(existing);
+                        }
+                    }
+                }
+                catch (Exception catEx)
+                {
+                    // If everything fails, we might need a more drastic measure, but let's try this first
+                    System.Diagnostics.Debug.WriteLine($"Category table error: {catEx.Message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Database Init Error: {ex.Message}");
+                throw;
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
         public async Task<List<JournalEntry>> GetEntriesAsync()
@@ -107,6 +154,31 @@ namespace MOODJOURNAL.Services
                 entry.Tags = JsonSerializer.Deserialize<List<string>>(entry.TagsJson) ?? new();
             }
             return entries;
+        }
+
+        // --- Category Management ---
+        public async Task<List<Category>> GetCategoriesAsync()
+        {
+            await Init();
+            return await _database!.Table<Category>()
+                .OrderByDescending(x => x.IsDefault)
+                .ThenBy(x => x.Name)
+                .ToListAsync();
+        }
+
+        public async Task<int> SaveCategoryAsync(Category category)
+        {
+            await Init();
+            if (category.Id != 0)
+                return await _database!.UpdateAsync(category);
+            else
+                return await _database!.InsertAsync(category);
+        }
+
+        public async Task<int> DeleteCategoryAsync(Category category)
+        {
+            await Init();
+            return await _database!.DeleteAsync(category);
         }
     }
 }

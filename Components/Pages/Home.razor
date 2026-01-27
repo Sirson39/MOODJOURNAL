@@ -2,6 +2,7 @@
 @using MOODJOURNAL.Models
 @using MOODJOURNAL.Services
 @inject DatabaseService DB
+@inject IJSRuntime JS
 
 <div class="fade-in">
     <div class="content-header">
@@ -45,15 +46,22 @@
             </div>
         </div>
 
-        <!-- Mood Dist placeholder -->
+        <!-- Mood Distribution -->
         <div class="card">
             <h3 style="margin-top: 0; font-size: 1.1rem;">Mood Distribution</h3>
-            <div style="height: 150px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 0.85rem; text-align: center;">
-                <div>
-                    <i class="ph ph-chart-pie" style="font-size: 2rem; opacity: 0.2;"></i><br />
-                    No mood data yet
+            @if (TotalEntries > 0)
+            {
+                <canvas id="homeMoodChart" style="max-height: 150px;"></canvas>
+            }
+            else
+            {
+                <div style="height: 150px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 0.85rem; text-align: center;">
+                    <div>
+                        <i class="ph ph-chart-pie" style="font-size: 2rem; opacity: 0.2;"></i><br />
+                        No mood data yet
+                    </div>
                 </div>
-            </div>
+            }
         </div>
 
         <!-- Recent Entries -->
@@ -132,6 +140,29 @@
 
         // Extract popular tags
         PopularTags = entries.SelectMany(x => x.Tags).GroupBy(x => x).OrderByDescending(g => g.Count()).Take(5).Select(g => g.Key).ToList();
+
+        Entries = entries;
+    }
+
+    private List<JournalEntry> Entries = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && Entries.Any())
+        {
+            var positive = new[] { "Happy", "Excited", "Relaxed", "Grateful", "Confident" };
+            var neutral = new[] { "Calm", "Thoughtful", "Curious", "Nostalgic", "Bored" };
+
+            var posCount = Entries.Count(e => positive.Contains(e.PrimaryMood));
+            var neuCount = Entries.Count(e => neutral.Contains(e.PrimaryMood));
+            var negCount = Entries.Count - posCount - neuCount;
+
+            await JS.InvokeVoidAsync("createPieChart", new object[] { "homeMoodChart",
+                new[] { "Positive", "Neutral", "Negative" },
+                new[] { posCount, neuCount, negCount },
+                new[] { "#E3F2E1", "#E1F0F2", "#F2E1E1" }
+            });
+        }
     }
 
     private void CalculateStreaks(List<JournalEntry> entries)

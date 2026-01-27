@@ -1,20 +1,21 @@
 ﻿var quillEditors = {};
 
-window.initQuill = (elementId, content, dotNetRef) => {
+window.initQuill = (elementId, content, dotNetRef, readOnly) => {
     var container = document.getElementById(elementId);
     if (!container) return;
 
     var quill = new Quill(container, {
         modules: {
-            toolbar: [
+            toolbar: readOnly ? false : [
                 [{ header: [1, 2, false] }],
                 ['bold', 'italic', 'underline'],
                 ['list', 'bullet'],
                 ['link', 'clean']
             ]
         },
-        placeholder: 'Start writing your thoughts...',
-        theme: 'snow'
+        placeholder: readOnly ? '' : 'Start writing your thoughts...',
+        theme: 'snow',
+        readOnly: readOnly || false
     });
 
     if (content) {
@@ -97,5 +98,66 @@ window.createBarChart = (elementId, labels, data) => {
             plugins: { legend: { display: false } },
             scales: { y: { beginAtZero: true } }
         }
+    });
+};
+
+/* --- Professional UI Helpers --- */
+
+window.showToast = (message, type) => {
+    var container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    var toast = document.createElement('div');
+    toast.className = `toast-message ${type || 'success'}`;
+    var icon = type === 'error' ? 'ph-warning-circle' : 'ph-check-circle';
+
+    toast.innerHTML = `<i class="ph-fill ${icon}" style="font-size: 1.5rem;"></i><span style="font-weight: 500;">${message}</span>`;
+
+    container.appendChild(toast);
+
+    // Auto remove after 3.5s
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(50px)';
+        toast.style.transition = 'all 0.4s ease';
+        setTimeout(() => toast.remove(), 400);
+    }, 3500);
+};
+
+window.customConfirm = (title, text, confirmText, iconEmoji) => {
+    return new Promise((resolve) => {
+        var overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+
+        var card = document.createElement('div');
+        card.className = 'modal-card';
+
+        card.innerHTML = `
+            <div class="modal-icon">${iconEmoji || '🗑️'}</div>
+            <h3 class="modal-title brand-font">${title}</h3>
+            <p class="modal-text">${text}</p>
+            <div class="modal-actions">
+                <button class="btn-secondary" id="confirm-cancel">Cancel</button>
+                <button class="btn-primary" id="confirm-ok" style="background: var(--mood-negative); color: var(--mood-negative-text); border: none; padding: 0.75rem 2rem;">${confirmText || 'Confirm'}</button>
+            </div>
+        `;
+
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+
+        document.getElementById('confirm-cancel').onclick = () => {
+            overlay.remove();
+            resolve(false);
+        };
+
+        document.getElementById('confirm-ok').onclick = () => {
+            overlay.remove();
+            resolve(true);
+        };
     });
 };

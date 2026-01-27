@@ -1,4 +1,4 @@
-@page "/timeline"
+﻿@page "/timeline"
 @using MOODJOURNAL.Models
 @using MOODJOURNAL.Services
 @inject DatabaseService DB
@@ -208,12 +208,19 @@
 
     private async Task DeleteEntry(JournalEntry entry)
     {
-        bool confirmed = await JS.InvokeAsync<bool>("confirm", new object[] { $"Are you sure you want to delete '{entry.Title}'?" });
+        bool confirmed = await JS.InvokeAsync<bool>("customConfirm", new object[] {
+            "Delete Entry?",
+            $"Are you sure you want to remove '{entry.Title}'? This action cannot be undone.",
+            "Delete",
+            "🗑️"
+        });
+
         if (confirmed)
         {
             await DB.DeleteEntryAsync(entry);
             AllEntries.Remove(entry);
             ApplyFilters();
+            await JS.InvokeVoidAsync("showToast", new object[] { "Entry removed successfully", "success" });
             StateHasChanged();
         }
     }

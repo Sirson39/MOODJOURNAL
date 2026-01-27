@@ -146,18 +146,18 @@
             if (newPinInput.Length >= 4)
             {
                 Security.SetPin(newPinInput);
-                await JS.InvokeVoidAsync("alert", new object[] { "PIN updated successfully!" });
+                await JS.InvokeVoidAsync("showToast", new object[] { "PIN updated successfully!", "success" });
                 currentPinInput = "";
                 newPinInput = "";
             }
             else
             {
-                await JS.InvokeVoidAsync("alert", new object[] { "PIN must be at least 4 digits." });
+                await JS.InvokeVoidAsync("showToast", new object[] { "PIN must be at least 4 digits.", "error" });
             }
         }
         else
         {
-            await JS.InvokeVoidAsync("alert", new object[] { "Current PIN is incorrect." });
+            await JS.InvokeVoidAsync("showToast", new object[] { "Current PIN is incorrect.", "error" });
         }
     }
 
@@ -174,7 +174,7 @@
             var entries = await DB.GetEntriesInDateRangeAsync(exportStart, exportEnd);
             if (!entries.Any())
             {
-                await JS.InvokeVoidAsync("alert", new object[] { "No entries found in this date range." });
+                await JS.InvokeVoidAsync("showToast", new object[] { "No entries found in this date range.", "error" });
                 return;
             }
 
@@ -194,11 +194,11 @@
 
             await File.WriteAllBytesAsync(path, pdfBytes);
 
-            await JS.InvokeVoidAsync("alert", new object[] { $"Export successful! Saved to your Downloads folder: {path}" });
+            await JS.InvokeVoidAsync("showToast", new object[] { "Export successful! Check your Downloads folder.", "success" });
         }
         catch (Exception ex)
         {
-            await JS.InvokeVoidAsync("alert", new object[] { "Error exporting PDF: " + ex.Message });
+            await JS.InvokeVoidAsync("showToast", new object[] { "Error exporting PDF: " + ex.Message, "error" });
         }
     }
 }

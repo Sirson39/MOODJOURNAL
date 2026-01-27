@@ -8,11 +8,20 @@
 
 <div class="fade-in" style="max-width: 900px; margin: 0 auto;">
     <div class="content-header" style="margin-bottom: 1.5rem;">
-        <h2 class="brand-font">@(EntryId == 0 ? "New Entry" : "Edit Entry")</h2>
-        <button class="btn-primary" @onclick="SaveEntry">
-            <i class="ph-fill ph-floppy-disk"></i>
-            Save Entry
-        </button>
+        <h2 class="brand-font">@(EntryId == 0 ? "New Entry" : IsReadOnly ? "View Entry" : "Edit Entry")</h2>
+        @if (!IsReadOnly)
+        {
+            <button class="btn-primary" @onclick="SaveEntry">
+                <i class="ph-fill ph-floppy-disk"></i>
+                Save Entry
+            </button>
+        }
+        else
+        {
+            <div style="background: var(--mood-neutral); color: var(--mood-neutral-text); padding: 0.5rem 1rem; border-radius: 50px; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="ph ph-eye"></i> View Mode
+            </div>
+        }
     </div>
 
     <div style="text-align: center; margin-bottom: 2rem;">
@@ -24,8 +33,8 @@
 
     <!-- Title and Content -->
     <div class="card">
-        <input type="text" @bind="Entry.Title" placeholder="Give your entry a title..."
-               style="width: 100%; border: none; font-size: 1.5rem; font-family: 'Playfair Display', serif; font-weight: 700; margin-bottom: 1rem; outline: none; background: transparent;" />
+        <input type="text" @bind="Entry.Title" placeholder="Give your entry a title..." disabled="@IsReadOnly"
+               style="width: 100%; border: none; font-size: 1.5rem; font-family: 'Playfair Display', serif; font-weight: 700; margin-bottom: 1rem; outline: none; background: transparent; @(IsReadOnly ? "cursor: default; opacity: 1;" : "")" />
 
         <div id="editor" style="height: 400px; border: none; font-family: 'Outfit', sans-serif; font-size: 1.1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
         </div>
@@ -49,9 +58,9 @@
                     <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
                         @foreach (var mood in category.Value)
                         {
-                            <button @onclick="() => SetPrimaryMood(mood)"
+                            <button @onclick="() => { if (!IsReadOnly) SetPrimaryMood(mood); }"
                                     class="mood-btn @(Entry.PrimaryMood == mood ? "active-" + category.Key.ToLower() : "")"
-                                    style="display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; border-radius: 50px; border: 1px solid var(--border-color); background: #fff; cursor: pointer; transition: all 0.2s; font-size: 0.9rem; font-weight: 500;">
+                                    style="display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; border-radius: 50px; border: 1px solid var(--border-color); background: #fff; cursor: @(IsReadOnly ? "default" : "pointer"); transition: all 0.2s; font-size: 0.9rem; font-weight: 500; @(IsReadOnly && Entry.PrimaryMood != mood ? "opacity: 0.5;" : "")">
                                 @GetMoodEmoji(mood) @mood
                             </button>
                         }
@@ -70,9 +79,9 @@
             {
                 @foreach (var mood in moodList)
                 {
-                    <button @onclick="() => ToggleSecondaryMood(mood)"
+                    <button @onclick="() => { if (!IsReadOnly) ToggleSecondaryMood(mood); }"
                             class="mood-btn @(Entry.SecondaryMoods.Contains(mood) ? "active-secondary" : "")"
-                            style="display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.8rem; border-radius: 50px; border: 1px solid var(--border-color); background: #fff; cursor: pointer; font-size: 0.85rem;">
+                            style="display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.8rem; border-radius: 50px; border: 1px solid var(--border-color); background: #fff; cursor: @(IsReadOnly ? "default" : "pointer"); font-size: 0.85rem; @(IsReadOnly && !Entry.SecondaryMoods.Contains(mood) ? "opacity: 0.5;" : "")">
                         @GetMoodEmoji(mood) @mood
                     </button>
                 }
@@ -85,7 +94,7 @@
         <h3 style="margin-top: 0; font-size: 1.25rem;">Tags (optional)</h3>
         <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">Add custom tags and quickly reuse common ones.</p>
 
-        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+        <div style="display: @(IsReadOnly ? "none" : "flex"); gap: 0.5rem; margin-bottom: 1rem;">
             <input type="text" @bind="newTag" @bind:event="oninput" @onkeyup="HandleTagKey" placeholder="Add custom tag..."
                    style="flex: 1; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.9rem;" />
             <button @onclick="AddTag" style="background: var(--bg-color); border: 1px solid var(--border-color); padding: 0 1rem; border-radius: var(--radius-sm); cursor: pointer;">
@@ -100,38 +109,42 @@
                 {
                     <span style="background: var(--accent-light); color: var(--accent); padding: 0.4rem 0.75rem; border-radius: 50px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
                         #@tag
-                        <i class="ph ph-x" style="cursor: pointer;" @onclick="() => Entry.Tags.Remove(tag)"></i>
+                        @if (!IsReadOnly)
+                        {
+                            <i class="ph ph-x" style="cursor: pointer;" @onclick="() => Entry.Tags.Remove(tag)"></i>
+                        }
                     </span>
                 }
             </div>
         }
 
-        <div style="margin-bottom: 1.5rem;">
-            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 700; text-transform: uppercase;">Quick add:</p>
-            <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
-                @foreach (var tag in PrebuiltTags)
-                {
-                    <button @onclick="() => ToggleTag(tag)"
-                            style="padding: 0.4rem 0.8rem; border-radius: 50px; border: 1px solid var(--border-color); background: #fff; cursor: pointer; font-size: 0.8rem; color: var(--text-primary);">
-                        @tag
-                    </button>
-                }
+        @if (!IsReadOnly)
+        {
+            <div style="margin-bottom: 1.5rem;">
+                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 700; text-transform: uppercase;">Quick add:</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                    @foreach (var tag in PrebuiltTags)
+                    {
+                        <button @onclick="() => ToggleTag(tag)"
+                                style="padding: 0.4rem 0.8rem; border-radius: 50px; border: 1px solid var(--border-color); background: #fff; cursor: pointer; font-size: 0.8rem; color: var(--text-primary);">
+                            @tag
+                        </button>
+                    }
+                </div>
             </div>
-        </div>
+        }
 
         <hr style="margin: 2rem 0; border: 0; border-top: 1px solid var(--border-color);" />
 
         <h3 style="font-size: 1.25rem;">Category (optional)</h3>
         <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">Keep entries organized by category.</p>
 
-        <select @bind="Entry.Category" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; background: #fff;">
+        <select @bind="Entry.Category" disabled="@IsReadOnly" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; background: #fff; @(IsReadOnly ? "cursor: default; opacity: 1;" : "")">
             <option value="">Select a category...</option>
-            <option value="Personal">Personal</option>
-            <option value="Work">Work</option>
-            <option value="Health">Health</option>
-            <option value="Travel">Travel</option>
-            <option value="Fitness">Fitness</option>
-            <option value="Self-care">Self-care</option>
+            @foreach (var catName in DisplayCategories)
+            {
+                <option value="@catName">@catName</option>
+            }
         </select>
     </div>
 
@@ -186,9 +199,12 @@
     [Parameter] public int EntryId { get; set; } = 0;
 
     private JournalEntry Entry = new();
+    private List<string> DisplayCategories = new();
     private DateTime EntryDate = DateTime.Now;
     private string newTag = "";
     private int WordCount = 0;
+
+    private bool IsReadOnly => Entry.Id != 0 && Entry.Date.Date != DateTime.Now.Date;
 
     private Dictionary<string, List<string>> MoodCategories = new()
     {
@@ -199,11 +215,18 @@
 
     private string[] PrebuiltTags = {
         "Work", "Career", "Studies", "Family", "Friends", "Relationships",
-        "Health", "Fitness", "Personal Growth", "Self-care", "Hobbies", "Travel"
+        "Health", "Fitness", "Personal Growth", "Self-care", "Hobbies", "Travel", "Nature",
+        "Finance", "Spirituality", "Birthday", "Holiday", "Vacation", "Celebration", "Exercise",
+        "Reading", "Writing", "Cooking", "Meditation", "Yoga", "Music", "Shopping", "Parenting",
+        "Projects", "Planning", "Reflection"
     };
 
     protected override async Task OnInitializedAsync()
     {
+        var custom = await DB.GetCategoriesAsync();
+        var defaults = new[] { "Personal", "Work", "Health", "Travel", "Fitness", "Self-care" };
+        DisplayCategories = defaults.Concat(custom.Select(c => c.Name)).Distinct().ToList();
+
         if (EntryId != 0)
         {
             var existing = await DB.GetEntriesAsync();
@@ -242,7 +265,7 @@
         if (firstRender)
         {
             objRef = DotNetObjectReference.Create(this);
-            await JS.InvokeVoidAsync("initQuill", new object[] { "editor", Entry.Content, objRef });
+            await JS.InvokeVoidAsync("initQuill", new object[] { "editor", Entry.Content, objRef, IsReadOnly });
         }
     }
 
@@ -299,7 +322,7 @@
     {
         if (string.IsNullOrEmpty(Entry.PrimaryMood))
         {
-            await JS.InvokeVoidAsync("alert", new object[] { "Please select a primary mood." });
+            await JS.InvokeVoidAsync("showToast", new object[] { "Please select a primary mood.", "error" });
             return;
         }
 
@@ -308,6 +331,10 @@
         Entry.ContentRaw = await JS.InvokeAsync<string>("getQuillText", new object[] { "editor" });
 
         await DB.SaveEntryAsync(Entry);
+        await JS.InvokeVoidAsync("showToast", new object[] { "Entry saved successfully!", "success" });
+
+        // Brief delay for the user to see the toast before navigating
+        await Task.Delay(800);
         Nav.NavigateTo("/");
     }
 
