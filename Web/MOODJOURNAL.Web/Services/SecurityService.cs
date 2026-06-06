@@ -26,7 +26,8 @@ namespace MOODJOURNAL.Services
 
         public async Task<bool> Login(string username, string pin)
         {
-            var user = await _db.GetUserAsync(username);
+            var normalizedUsername = NormalizeUsername(username);
+            var user = await _db.GetUserAsync(normalizedUsername);
             if (user == null)
                 return false;
 
@@ -46,12 +47,13 @@ namespace MOODJOURNAL.Services
 
         public async Task<bool> Register(string username, string pin)
         {
-            var existing = await _db.GetUserAsync(username);
+            var normalizedUsername = NormalizeUsername(username);
+            var existing = await _db.GetUserAsync(normalizedUsername);
             if (existing != null) return false;
 
             var newUser = new User
             {
-                Username = username,
+                Username = normalizedUsername,
                 Password = HashPin(pin)
             };
 
@@ -59,7 +61,7 @@ namespace MOODJOURNAL.Services
             var result = await _db.CreateUserAsync(newUser);
             if (result > 0)
             {
-                CurrentUser = await _db.GetUserAsync(username);
+                CurrentUser = await _db.GetUserAsync(normalizedUsername);
                 IsLocked = false;
                 return true;
             }
@@ -139,6 +141,11 @@ namespace MOODJOURNAL.Services
             {
                 return false;
             }
+        }
+
+        private static string NormalizeUsername(string username)
+        {
+            return username.Trim().ToLowerInvariant();
         }
     }
 }
