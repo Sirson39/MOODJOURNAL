@@ -151,18 +151,25 @@
     {
         if (firstRender && Entries.Any())
         {
-            var positive = new[] { "Happy", "Excited", "Relaxed", "Grateful", "Confident" };
-            var neutral = new[] { "Calm", "Thoughtful", "Curious", "Nostalgic", "Bored" };
+            try
+            {
+                var positive = new[] { "Happy", "Excited", "Relaxed", "Grateful", "Confident" };
+                var neutral = new[] { "Calm", "Thoughtful", "Curious", "Nostalgic", "Bored" };
 
-            var posCount = Entries.Count(e => positive.Contains(e.PrimaryMood));
-            var neuCount = Entries.Count(e => neutral.Contains(e.PrimaryMood));
-            var negCount = Entries.Count - posCount - neuCount;
+                var posCount = Entries.Count(e => positive.Contains(e.PrimaryMood));
+                var neuCount = Entries.Count(e => neutral.Contains(e.PrimaryMood));
+                var negCount = Entries.Count - posCount - neuCount;
 
-            await JS.InvokeVoidAsync("createPieChart", new object[] { "homeMoodChart",
-                new[] { "Positive", "Neutral", "Negative" },
-                new[] { posCount, neuCount, negCount },
-                new[] { "#E3F2E1", "#E1F0F2", "#F2E1E1" }
-            });
+                await JS.InvokeVoidAsync("createPieChart", new object[] { "homeMoodChart",
+                    new[] { "Positive", "Neutral", "Negative" },
+                    new[] { posCount, neuCount, negCount },
+                    new[] { "#E3F2E1", "#E1F0F2", "#F2E1E1" }
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Home chart render skipped: {ex.Message}");
+            }
         }
     }
 

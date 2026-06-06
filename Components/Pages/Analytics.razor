@@ -113,33 +113,40 @@
     {
         if (firstRender && Entries.Any())
         {
-            // Prepare data for Mood Chart
-            var positive = new[] { "Happy", "Excited", "Relaxed", "Grateful", "Confident" };
-            var neutral = new[] { "Calm", "Thoughtful", "Curious", "Nostalgic", "Bored" };
+            try
+            {
+                // Prepare data for Mood Chart
+                var positive = new[] { "Happy", "Excited", "Relaxed", "Grateful", "Confident" };
+                var neutral = new[] { "Calm", "Thoughtful", "Curious", "Nostalgic", "Bored" };
 
-            var posCount = Entries.Count(e => positive.Contains(e.PrimaryMood));
-            var neuCount = Entries.Count(e => neutral.Contains(e.PrimaryMood));
-            var negCount = Entries.Count - posCount - neuCount;
+                var posCount = Entries.Count(e => positive.Contains(e.PrimaryMood));
+                var neuCount = Entries.Count(e => neutral.Contains(e.PrimaryMood));
+                var negCount = Entries.Count - posCount - neuCount;
 
-            await JS.InvokeVoidAsync("createPieChart", new object[] { "moodChart",
-new[] { "Positive", "Neutral", "Negative" },
-new[] { posCount, neuCount, negCount },
-new[] { "#E3F2E1", "#E1F0F2", "#F2E1E1" }
-});
+                await JS.InvokeVoidAsync("createPieChart", new object[] { "moodChart",
+                    new[] { "Positive", "Neutral", "Negative" },
+                    new[] { posCount, neuCount, negCount },
+                    new[] { "#E3F2E1", "#E1F0F2", "#F2E1E1" }
+                });
 
-            // Word Count Chart (Last 10 entries)
-            var last10 = Entries.OrderBy(x => x.Date).TakeLast(10).ToList();
-            var lineLabels = last10.Select(x => x.Date.ToString("MMM dd")).ToArray();
-            var lineData = last10.Select(x => x.ContentRaw.Split(new[] { ' ', '\n', '\r' },
-            StringSplitOptions.RemoveEmptyEntries).Length).ToArray();
-            await JS.InvokeVoidAsync("createLineChart", new object[] { "wordChart", lineLabels, lineData });
+                // Word Count Chart (Last 10 entries)
+                var last10 = Entries.OrderBy(x => x.Date).TakeLast(10).ToList();
+                var lineLabels = last10.Select(x => x.Date.ToString("MMM dd")).ToArray();
+                var lineData = last10.Select(x => x.ContentRaw.Split(new[] { ' ', '\n', '\r' },
+                    StringSplitOptions.RemoveEmptyEntries).Length).ToArray();
+                await JS.InvokeVoidAsync("createLineChart", new object[] { "wordChart", lineLabels, lineData });
 
-            // Tag Breakdown
-            var tags = Entries.SelectMany(x => x.Tags).GroupBy(x => x).OrderByDescending(g => g.Count()).Take(8).ToList();
-            await JS.InvokeVoidAsync("createBarChart", new object[] { "tagChart",
-tags.Select(g => g.Key).ToArray(),
-tags.Select(g => g.Count()).ToArray()
-});
+                // Tag Breakdown
+                var tags = Entries.SelectMany(x => x.Tags).GroupBy(x => x).OrderByDescending(g => g.Count()).Take(8).ToList();
+                await JS.InvokeVoidAsync("createBarChart", new object[] { "tagChart",
+                    tags.Select(g => g.Key).ToArray(),
+                    tags.Select(g => g.Count()).ToArray()
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Analytics chart render skipped: {ex.Message}");
+            }
         }
     }
 

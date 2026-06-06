@@ -268,8 +268,15 @@
     {
         if (firstRender)
         {
-            objRef = DotNetObjectReference.Create(this);
-            await JS.InvokeVoidAsync("initQuill", new object[] { "editor", Entry.Content, objRef, IsReadOnly });
+            try
+            {
+                objRef = DotNetObjectReference.Create(this);
+                await JS.InvokeVoidAsync("initQuill", new object[] { "editor", Entry.Content, objRef, IsReadOnly });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Quill init skipped: {ex.Message}");
+            }
         }
     }
 

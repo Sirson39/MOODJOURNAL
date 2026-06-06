@@ -41,7 +41,12 @@ window.getQuillText = (elementId) => {
 };
 
 window.createPieChart = (elementId, labels, data, colors) => {
-    var ctx = document.getElementById(elementId).getContext('2d');
+    var canvas = document.getElementById(elementId);
+    if (!canvas || typeof Chart === 'undefined' || !canvas.getContext) {
+        return;
+    }
+
+    var ctx = canvas.getContext('2d');
     new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -60,7 +65,12 @@ window.createPieChart = (elementId, labels, data, colors) => {
 };
 
 window.createLineChart = (elementId, labels, data) => {
-    var ctx = document.getElementById(elementId).getContext('2d');
+    var canvas = document.getElementById(elementId);
+    if (!canvas || typeof Chart === 'undefined' || !canvas.getContext) {
+        return;
+    }
+
+    var ctx = canvas.getContext('2d');
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -82,7 +92,12 @@ window.createLineChart = (elementId, labels, data) => {
 };
 
 window.createBarChart = (elementId, labels, data) => {
-    var ctx = document.getElementById(elementId).getContext('2d');
+    var canvas = document.getElementById(elementId);
+    if (!canvas || typeof Chart === 'undefined' || !canvas.getContext) {
+        return;
+    }
+
+    var ctx = canvas.getContext('2d');
     new Chart(ctx, {
         type: 'bar',
         data: {

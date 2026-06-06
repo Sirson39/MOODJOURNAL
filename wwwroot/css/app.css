@@ -57,9 +57,10 @@ h3,
 
 /* Layout */
 .app-container {
-    display: flex;
+    display: block;
     height: 100vh;
     width: 100vw;
+    position: relative;
 }
 
 /* Sidebar */
@@ -71,6 +72,10 @@ h3,
     display: flex;
     flex-direction: column;
     gap: 3rem;
+    position: fixed;
+    inset: 0 auto 0 0;
+    overflow-y: auto;
+    z-index: 20;
 }
 
 .brand {
@@ -141,10 +146,12 @@ h3,
 
 /* Main Content */
 .main-content {
-    flex: 1;
+    margin-left: var(--sidebar-width);
+    width: calc(100vw - var(--sidebar-width));
     padding: 2.5rem 3rem;
     overflow-y: auto;
     position: relative;
+    min-height: 100vh;
 }
 
 .content-header {
@@ -521,9 +528,156 @@ h3,
     transition: all 0.2s !important;
 }
 
-    .btn-secondary:hover {
-        background: var(--bg-color);
-    }
+.btn-secondary:hover {
+    background: var(--bg-color);
+}
+
+/* Lock Screen */
+.lock-screen-shell {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-color);
+    z-index: 9999;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 1rem;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.lock-screen-card {
+    width: 100%;
+    max-width: 480px;
+    padding: 2.25rem;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+    margin-top: max(1rem, env(safe-area-inset-top));
+    margin-bottom: 1rem;
+}
+
+.lock-screen-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.lock-screen-icon {
+    margin: 0 auto 1rem;
+    width: 54px;
+    height: 54px;
+    font-size: 1.6rem;
+}
+
+.lock-screen-title {
+    font-size: 2rem;
+    margin: 0;
+    line-height: 1.05;
+}
+
+.lock-screen-subtitle {
+    color: var(--text-secondary);
+    margin: 0.5rem 0 0;
+}
+
+.lock-screen-toggle {
+    display: flex;
+    background: var(--bg-color);
+    padding: 0.35rem;
+    border-radius: 14px;
+    margin-bottom: 1.25rem;
+    border: 1px solid var(--border-color);
+    gap: 0.35rem;
+}
+
+.lock-screen-tab {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    color: var(--text-secondary);
+}
+
+.lock-screen-tab.active {
+    background: white;
+    color: var(--accent);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.lock-screen-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.95rem;
+}
+
+.lock-screen-label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: var(--text-secondary);
+    margin-bottom: 0.45rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.lock-screen-input-wrap {
+    position: relative;
+}
+
+.lock-screen-input-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    font-size: 1.15rem;
+    pointer-events: none;
+}
+
+.lock-screen-input {
+    width: 100%;
+    min-height: 52px;
+    padding: 0.9rem 1rem 0.9rem 3rem;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    font-size: 1rem;
+    background: #fff;
+    transition: border-color 0.2s;
+}
+
+.lock-screen-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.lock-screen-error {
+    background: rgba(220, 53, 69, 0.05);
+    color: #dc3545;
+    padding: 0.75rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    border: 1px solid rgba(220, 53, 69, 0.1);
+}
+
+.lock-screen-action {
+    width: 100%;
+    min-height: 52px;
+    border-radius: 12px;
+    justify-content: center;
+    font-size: 1.05rem;
+    margin-top: 0.25rem;
+}
+
+.lock-screen-footer {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 1.25rem;
+}
 
 @media (max-width: 768px) {
     body {
@@ -544,6 +698,10 @@ h3,
         gap: 0.85rem;
         align-items: center;
         overflow-y: auto;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: auto;
     }
 
     .brand {
@@ -583,6 +741,9 @@ h3,
     .main-content {
         min-width: 0;
         padding: 0.75rem;
+        margin-left: 4.5rem;
+        width: calc(100vw - 4.5rem);
+        min-height: 100dvh;
     }
 
     .content-header {
@@ -619,6 +780,7 @@ h3,
 
     .dashboard-grid {
         grid-template-columns: 1fr;
+        gap: 1rem;
     }
 
     .span-2 {
@@ -819,6 +981,54 @@ h3,
 
     .settings-page .settings-pin-input {
         width: 100%;
+    }
+
+    .lock-screen-shell {
+        padding: 0.75rem;
+    }
+
+    .lock-screen-card {
+        max-width: 100%;
+        padding: 1.25rem;
+        margin-top: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .lock-screen-header {
+        margin-bottom: 1rem;
+    }
+
+    .lock-screen-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 1.4rem;
+        margin-bottom: 0.85rem;
+    }
+
+    .lock-screen-title {
+        font-size: 1.6rem;
+    }
+
+    .lock-screen-subtitle {
+        font-size: 0.95rem;
+    }
+
+    .lock-screen-toggle {
+        margin-bottom: 1rem;
+    }
+
+    .lock-screen-form {
+        gap: 0.8rem;
+    }
+
+    .lock-screen-input {
+        min-height: 48px;
+        font-size: 0.98rem;
+    }
+
+    .lock-screen-action {
+        min-height: 48px;
+        font-size: 1rem;
     }
 
     .main-content .card > div[style*="display: flex; gap: 1rem"] {
