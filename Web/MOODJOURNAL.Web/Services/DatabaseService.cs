@@ -14,13 +14,48 @@ namespace MOODJOURNAL.Services
 
         public DatabaseService(IConfiguration configuration)
         {
-            var connectionString = configuration.GetConnectionString("Supabase")
+            var rawConnectionString = configuration.GetConnectionString("Supabase")
                 ?? Environment.GetEnvironmentVariable("SUPABASE_DB_URL")
                 ?? throw new InvalidOperationException(
                     "Missing Supabase database connection string. Set ConnectionStrings__Supabase or SUPABASE_DB_URL.");
 
+            var connectionString = NormalizeConnectionString(rawConnectionString);
+
             var builder = new NpgsqlDataSourceBuilder(connectionString);
             _dataSource = builder.Build();
+        }
+
+        private static string NormalizeConnectionString(string rawConnectionString)
+        {
+            if (rawConnectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase) ||
+                rawConnectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase))
+            {
+                var uri = new Uri(rawConnectionString);
+                var userInfo = uri.UserInfo.Split(':', 2);
+                var username = Uri.UnescapeDataString(userInfo.ElementAtOrDefault(0) ?? "");
+                var password = Uri.UnescapeDataString(userInfo.ElementAtOrDefault(1) ?? "");
+                var database = uri.AbsolutePath.Trim('/').Length > 0
+                    ? Uri.UnescapeDataString(uri.AbsolutePath.Trim('/'))
+                    : "postgres";
+
+                var host = uri.Host;
+                var port = uri.Port > 0 ? uri.Port : 5432;
+
+                var builder = new NpgsqlConnectionStringBuilder
+                {
+                    Host = host,
+                    Port = port,
+                    Database = database,
+                    Username = username,
+                    Password = password,
+                    SslMode = SslMode.Require,
+                    TrustServerCertificate = true
+                };
+
+                return builder.ConnectionString;
+            }
+
+            return rawConnectionString;
         }
 
         private async Task EnsureInitializedAsync()
