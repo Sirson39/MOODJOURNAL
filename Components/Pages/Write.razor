@@ -7,7 +7,7 @@
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 
-<div class="fade-in" style="max-width: 900px; margin: 0 auto;">
+<div class="fade-in write-page" style="max-width: 900px; margin: 0 auto;">
     <div class="content-header" style="margin-bottom: 1.5rem;">
         <h2 class="brand-font">@(EntryId == 0 ? "New Entry" : IsReadOnly ? "View Entry" : "Edit Entry")</h2>
         @if (!IsReadOnly)
@@ -95,10 +95,10 @@
         <h3 style="margin-top: 0; font-size: 1.25rem;">Tags (optional)</h3>
         <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">Add custom tags and quickly reuse common ones.</p>
 
-        <div style="display: @(IsReadOnly ? "none" : "flex"); gap: 0.5rem; margin-bottom: 1rem;">
-            <input type="text" @bind="newTag" @bind:event="oninput" @onkeyup="HandleTagKey" placeholder="Add custom tag..."
+        <div class="tags-entry-row" style="display: @(IsReadOnly ? "none" : "flex"); gap: 0.5rem; margin-bottom: 1rem;">
+            <input class="tags-entry-input" type="text" @bind="newTag" @bind:event="oninput" @onkeyup="HandleTagKey" placeholder="Add custom tag..."
                    style="flex: 1; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.9rem;" />
-            <button @onclick="AddTag" style="background: var(--bg-color); border: 1px solid var(--border-color); padding: 0 1rem; border-radius: var(--radius-sm); cursor: pointer;">
+            <button class="tags-entry-button" @onclick="AddTag" style="background: var(--bg-color); border: 1px solid var(--border-color); padding: 0 1rem; border-radius: var(--radius-sm); cursor: pointer;">
                 <i class="ph-bold ph-plus"></i>
             </button>
         </div>

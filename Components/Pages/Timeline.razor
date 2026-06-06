@@ -6,16 +6,16 @@
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 
-<div class="fade-in">
+<div class="fade-in timeline-page">
     <div class="content-header">
         <div>
             <h2>Timeline</h2>
             <p style="color: var(--text-secondary);">Browse, search, and filter your past entries.</p>
         </div>
-        <div style="display: flex; gap: 1rem; align-items: center;">
-            <div style="position: relative;">
+        <div class="timeline-toolbar">
+            <div class="timeline-search-wrap" style="position: relative;">
                 <i class="ph ph-magnifying-glass" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary);"></i>
-                <input type="text" @bind="SearchQuery" @bind:event="oninput" @onkeyup="HandleSearch" placeholder="Search title or content..."
+                <input class="timeline-search-input" type="text" @bind="SearchQuery" @bind:event="oninput" @onkeyup="HandleSearch" placeholder="Search title or content..."
                        style="padding: 0.75rem 1rem 0.75rem 2.5rem; border: 1px solid var(--border-color); border-radius: 50px; font-size: 0.9rem; width: 300px;" />
             </div>
             <button class="btn-primary" @onclick="ToggleFilters" style="background: var(--bg-color); color: var(--text-primary); border: 1px solid var(--border-color);">
@@ -26,14 +26,14 @@
 
     @if (ShowFilters)
     {
-        <div class="card" style="margin-bottom: 2rem; background: var(--bg-color); border: 1px dashed var(--border-color);">
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;">
-                <div>
+        <div class="card timeline-filters-card" style="margin-bottom: 2rem; background: var(--bg-color); border: 1px dashed var(--border-color);">
+            <div class="timeline-filters-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;">
+                <div class="timeline-date-range">
                     <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.5rem;">DATE RANGE</label>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <input type="date" @bind="StartDate" style="flex: 1; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border-color);" />
+                    <div class="timeline-date-range-row" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input class="timeline-date-input" type="date" @bind="StartDate" style="flex: 1; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border-color);" />
                         <span>to</span>
-                        <input type="date" @bind="EndDate" style="flex: 1; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border-color);" />
+                        <input class="timeline-date-input" type="date" @bind="EndDate" style="flex: 1; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border-color);" />
                     </div>
                 </div>
                 <div>
@@ -57,7 +57,7 @@
                     </select>
                 </div>
             </div>
-            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+            <div class="timeline-filter-actions" style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
                 <button @onclick="ClearFilters" style="background: transparent; border: none; font-weight: 600; color: var(--text-secondary); cursor: pointer;">Clear All</button>
                 <button @onclick="ApplyFilters" class="btn-primary" style="padding: 0.5rem 1.5rem;">Apply Filters</button>
             </div>

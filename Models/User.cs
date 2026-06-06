@@ -10,7 +10,7 @@ namespace MOODJOURNAL.Models
         [Unique]
         public string Username { get; set; } = "";
 
-        public string Password { get; set; } = ""; // Store PIN or password
+        public string Password { get; set; } = ""; // Stores the hashed PIN/password value
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }

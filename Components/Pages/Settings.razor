@@ -6,7 +6,7 @@
 @inject ExportService Exporter
 @inject IJSRuntime JS
 
-<div class="fade-in" style="max-width: 800px; margin: 0 auto;">
+<div class="fade-in settings-page" style="max-width: 800px; margin: 0 auto;">
     <div class="content-header">
         <h2>Settings</h2>
     </div>
@@ -22,21 +22,21 @@
             preferences.
         </p>
 
-        <div style="max-width: 400px;">
+        <div class="settings-security-block" style="max-width: 400px;">
             <label style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.75rem;">
                 CURRENT
                 PIN
             </label>
-            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
-                <input type="password" @bind="currentPinInput" placeholder="Enter current PIN"
+            <div class="settings-pin-row" style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                <input class="settings-pin-input" type="password" @bind="currentPinInput" placeholder="Enter current PIN"
                        style="flex: 1; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 8px;" />
             </div>
 
             <label style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.75rem;">NEW PIN</label>
-            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
-                <input type="password" @bind="newPinInput" placeholder="Enter new PIN"
+            <div class="settings-pin-row settings-pin-row-action" style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                <input class="settings-pin-input" type="password" @bind="newPinInput" placeholder="Enter new PIN"
                        style="flex: 1; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 8px;" />
-                <button class="btn-primary" @onclick="UpdatePin">Update PIN</button>
+                <button class="btn-primary settings-pin-button" @onclick="UpdatePin">Update PIN</button>
             </div>
         </div>
     </div>
@@ -82,13 +82,13 @@
             document for safekeeping.
         </p>
 
-        <div style="display: flex; align-items: flex-end; gap: 1rem;">
+        <div class="export-range-row" style="display: flex; align-items: flex-end; gap: 1rem;">
             <div>
                 <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.5rem;">
                     START
                     DATE
                 </label>
-                <input type="date" @bind="exportStart"
+                <input class="export-date-input" type="date" @bind="exportStart"
                        style="padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);" />
             </div>
             <div>
@@ -96,7 +96,7 @@
                     END
                     DATE
                 </label>
-                <input type="date" @bind="exportEnd"
+                <input class="export-date-input" type="date" @bind="exportEnd"
                        style="padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);" />
             </div>
             <button class="btn-primary" style="height: 3rem;" @onclick="ExportPdf">
@@ -144,24 +144,23 @@
     {
         if (Security.CurrentUser == null) return;
 
-        if (currentPinInput == Security.CurrentUser.Password)
+        if (newPinInput.Length >= 4)
         {
-            if (newPinInput.Length >= 4)
+            var updated = await Security.ChangePinAsync(currentPinInput, newPinInput);
+            if (updated)
             {
-                Security.CurrentUser.Password = newPinInput;
-                await DB.UpdateUserAsync(Security.CurrentUser);
                 await JS.InvokeVoidAsync("showToast", new object[] { "PIN updated successfully!", "success" });
                 currentPinInput = "";
                 newPinInput = "";
             }
             else
             {
-                await JS.InvokeVoidAsync("showToast", new object[] { "PIN must be at least 4 digits.", "error" });
+                await JS.InvokeVoidAsync("showToast", new object[] { "Current PIN is incorrect.", "error" });
             }
         }
         else
         {
-            await JS.InvokeVoidAsync("showToast", new object[] { "Current PIN is incorrect.", "error" });
+            await JS.InvokeVoidAsync("showToast", new object[] { "PIN must be at least 4 digits.", "error" });
         }
     }
 

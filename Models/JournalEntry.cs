@@ -17,16 +17,15 @@ namespace MOODJOURNAL.Models
 
         public string Title { get; set; } = string.Empty;
 
-        public string Content { get; set; } = string.Empty; // HTML Content
+        public string Content { get; set; } = string.Empty; 
 
-        public string ContentRaw { get; set; } = string.Empty; // Plain text for search
+        public string ContentRaw { get; set; } = string.Empty; 
 
         public string PrimaryMood { get; set; } = string.Empty;
 
-        public string SecondaryMoodsJson { get; set; } = "[]"; // Serialized JSON string
+        public string SecondaryMoodsJson { get; set; } = "[]"; 
 
-        public string TagsJson { get; set; } = "[]"; // Serialized JSON string
-
+        public string TagsJson { get; set; } = "[]";
         public string Category { get; set; } = string.Empty;
 
         public DateTime CreatedAt { get; set; }

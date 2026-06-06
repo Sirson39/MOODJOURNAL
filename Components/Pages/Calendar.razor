@@ -5,19 +5,19 @@
 @inject SecurityService Security
 @inject NavigationManager Nav
 
-<div class="fade-in">
+<div class="fade-in calendar-page">
     <div class="content-header">
         <div>
             <h2>Calendar</h2>
             <p style="color: var(--text-secondary);">Click a day to open or create that day's entry.</p>
         </div>
-        <div style="display: flex; align-items: center; gap: 1rem;">
+        <div class="calendar-toolbar">
             <button class="btn-primary"
                     style="background: var(--bg-color); color: var(--text-primary); border: 1px solid var(--border-color);"
                     @onclick="PrevMonth">
                 <i class="ph ph-arrow-left"></i> Prev
             </button>
-            <div class="card"
+            <div class="card calendar-month-label"
                  style="margin: 0; padding: 0.5rem 1.5rem; font-weight: 700; background: var(--accent-light); color: var(--accent);">
                 @CurrentMonth.ToString("MMMM yyyy")
             </div>
@@ -29,8 +29,8 @@
         </div>
     </div>
 
-    <div class="card" style="padding: 2rem;">
-        <div class="calendar-grid"
+    <div class="card calendar-shell" style="padding: 2rem;">
+        <div class="calendar-grid calendar-weekdays"
              style="margin-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
             @foreach (var day in DaysOfWeek)
             {
@@ -40,7 +40,7 @@
             }
         </div>
 
-        <div class="calendar-grid">
+        <div class="calendar-grid calendar-days">
             @for (int i = 0; i < Offset; i++)
             {
                 <div style="opacity: 0.3;"></div>
@@ -50,12 +50,12 @@
             {
                 var entry = GetEntryForDay(day);
                 <div class="calendar-day @(day.Date == DateTime.Today ? "today" : "")" @onclick="() => NavigateToDay(day)">
-                    <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.5rem;">@day.Day</div>
+                    <div class="calendar-day-date">@day.Day</div>
 
                     @if (entry != null)
                     {
-                        <div style="display: flex; flex-direction: column; gap: 0.3rem;">
-                            <span style="font-size: 0.65rem; background: #000; color: #fff; padding: 0.1rem 0.4rem; border-radius: 4px; width: fit-content; font-weight: 700;">Entry</span>
+                        <div class="calendar-day-meta">
+                            <span class="calendar-entry-pill">Entry</span>
                             <span class="mood-badge @GetMoodClass(entry.PrimaryMood)"
                                   style="font-size: 0.6rem; padding: 0.1rem 0.4rem;">
                                 @entry.PrimaryMood
@@ -64,7 +64,7 @@
                     }
                     else
                     {
-                        <div style="font-size: 0.7rem; color: var(--text-secondary); opacity: 0.5;">No entry</div>
+                        <div class="calendar-empty-state">No entry</div>
                     }
                 </div>
             }

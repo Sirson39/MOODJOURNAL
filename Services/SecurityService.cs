@@ -1,9 +1,16 @@
-﻿using MOODJOURNAL.Models;
+using System.Security.Cryptography;
+using System.Text;
+using MOODJOURNAL.Models;
 
 namespace MOODJOURNAL.Services
 {
     public class SecurityService
     {
+        private const string HashPrefix = "pbkdf2";
+        private const int Iterations = 100_000;
+        private const int SaltSize = 16;
+        private const int KeySize = 32;
+
         private readonly DatabaseService _db;
 
         // Tells the app if the lock screen should be visible
@@ -20,14 +27,21 @@ namespace MOODJOURNAL.Services
         public async Task<bool> Login(string username, string pin)
         {
             var user = await _db.GetUserAsync(username);
-            // Check if user exists and PIN matches exactly
-            if (user != null && user.Password == pin)
+            if (user == null)
+                return false;
+
+            if (!VerifyPin(pin, user.Password))
+                return false;
+
+            if (!IsHashedPin(user.Password))
             {
-                CurrentUser = user;
-                IsLocked = false;
-                return true;
+                user.Password = HashPin(pin);
+                await _db.UpdateUserAsync(user);
             }
-            return false;
+
+            CurrentUser = user;
+            IsLocked = false;
+            return true;
         }
 
         public async Task<bool> Register(string username, string pin)
@@ -38,7 +52,7 @@ namespace MOODJOURNAL.Services
             var newUser = new User
             {
                 Username = username,
-                Password = pin
+                Password = HashPin(pin)
             };
 
             // Save to DB and log them in automatically
@@ -52,10 +66,79 @@ namespace MOODJOURNAL.Services
             return false;
         }
 
+        public async Task<bool> ChangePinAsync(string currentPin, string newPin)
+        {
+            if (CurrentUser == null)
+                return false;
+
+            if (!VerifyPin(currentPin, CurrentUser.Password))
+                return false;
+
+            CurrentUser.Password = HashPin(newPin);
+            await _db.UpdateUserAsync(CurrentUser);
+            return true;
+        }
+
         public void Lock()
         {
             IsLocked = true;
             CurrentUser = null;
+        }
+
+        private static bool IsHashedPin(string value)
+        {
+            return value.StartsWith($"{HashPrefix}$", StringComparison.Ordinal);
+        }
+
+        private static string HashPin(string pin)
+        {
+            byte[] salt = RandomNumberGenerator.GetBytes(SaltSize);
+            byte[] hash = Rfc2898DeriveBytes.Pbkdf2(
+                Encoding.UTF8.GetBytes(pin),
+                salt,
+                Iterations,
+                HashAlgorithmName.SHA256,
+                KeySize);
+
+            return string.Join('$',
+                HashPrefix,
+                Iterations,
+                Convert.ToBase64String(salt),
+                Convert.ToBase64String(hash));
+        }
+
+        private static bool VerifyPin(string pin, string storedValue)
+        {
+            if (string.IsNullOrWhiteSpace(storedValue))
+                return false;
+
+            if (!IsHashedPin(storedValue))
+                return storedValue == pin;
+
+            var parts = storedValue.Split('$', 4);
+            if (parts.Length != 4)
+                return false;
+
+            if (!int.TryParse(parts[1], out var iterations))
+                return false;
+
+            try
+            {
+                byte[] salt = Convert.FromBase64String(parts[2]);
+                byte[] expectedHash = Convert.FromBase64String(parts[3]);
+                byte[] actualHash = Rfc2898DeriveBytes.Pbkdf2(
+                    Encoding.UTF8.GetBytes(pin),
+                    salt,
+                    iterations,
+                    HashAlgorithmName.SHA256,
+                    expectedHash.Length);
+
+                return CryptographicOperations.FixedTimeEquals(actualHash, expectedHash);
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }
