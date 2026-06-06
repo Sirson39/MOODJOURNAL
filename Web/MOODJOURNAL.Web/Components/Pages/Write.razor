@@ -1,0 +1,374 @@
+﻿@page "/write"
+@page "/write/{EntryId:int}"
+@using MOODJOURNAL.Models
+@using MOODJOURNAL.Services
+@inject DatabaseService DB
+@inject SecurityService Security
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<div class="fade-in write-page" style="max-width: 900px; margin: 0 auto;">
+    <div class="content-header" style="margin-bottom: 1.5rem;">
+        <h2 class="brand-font">@(EntryId == 0 ? "New Entry" : IsReadOnly ? "View Entry" : "Edit Entry")</h2>
+        @if (!IsReadOnly)
+        {
+            <button class="btn-primary" @onclick="SaveEntry">
+                <i class="ph-fill ph-floppy-disk"></i>
+                Save Entry
+            </button>
+        }
+        else
+        {
+            <div style="background: var(--mood-neutral); color: var(--mood-neutral-text); padding: 0.5rem 1rem; border-radius: 50px; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="ph ph-eye"></i> View Mode
+            </div>
+        }
+    </div>
+
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <span style="background: var(--card-bg); padding: 0.5rem 1.25rem; border-radius: 50px; border: 1px solid var(--border-color); font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); display: inline-flex; align-items: center; gap: 0.5rem;">
+            <i class="ph-fill ph-calendar"></i>
+            @EntryDate.ToString("dddd, MMMM dd, yyyy")
+        </span>
+    </div>
+
+    @* Title and Content*@
+    <div class="card">
+        <input type="text" @bind="Entry.Title" placeholder="Give your entry a title..." disabled="@IsReadOnly"
+               style="width: 100%; border: none; font-size: 1.5rem; font-family: 'Playfair Display', serif; font-weight: 700; margin-bottom: 1rem; outline: none; background: transparent; @(IsReadOnly ? "cursor: default; opacity: 1;" : "")" />
+
+        <div id="editor" style="height: 400px; border: none; font-family: 'Outfit', sans-serif; font-size: 1.1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+        </div>
+        <div style="text-align: right; font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">
+            @WordCount words
+        </div>
+    </div>
+
+    @* Mood Tracking *@
+    <div class="card">
+        <h3 style="margin-top: 0; font-size: 1.25rem;">Primary Mood <span style="color: var(--accent);">*</span></h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Choose one mood that best describes your day.</p>
+
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            @foreach (var category in MoodCategories)
+            {
+                <div>
+                    <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                        @(category.Key == "Positive" ? "😊 " : category.Key == "Neutral" ? "😐 " : "😓 ") @category.Key
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+                        @foreach (var mood in category.Value)
+                        {
+                            <button @onclick="() => { if (!IsReadOnly) SetPrimaryMood(mood); }"
+                                    class="mood-btn @(Entry.PrimaryMood == mood ? "active-" + category.Key.ToLower() : "")"
+                                    style="display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.1rem; border-radius: 50px; border: 1px solid var(--border-color); background: #fff; cursor: @(IsReadOnly ? "default" : "pointer"); transition: all 0.2s; font-size: 1rem; font-weight: 500; @(IsReadOnly && Entry.PrimaryMood != mood ? "opacity: 0.5;" : "")">
+                                @GetMoodEmoji(mood) @mood
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        <hr style="margin: 2rem 0; border: 0; border-top: 1px solid var(--border-color);" />
+
+        <h3 style="font-size: 1rem;">Secondary Moods (optional, max 2)</h3>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">Select up to 2 additional moods to better describe how you feel</p>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+            @foreach (var moodList in MoodCategories.Values)
+            {
+                @foreach (var mood in moodList)
+                {
+                    <button @onclick="() => { if (!IsReadOnly) ToggleSecondaryMood(mood); }"
+                            class="mood-btn @(Entry.SecondaryMoods.Contains(mood) ? "active-secondary" : "")"
+                            style="display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.9rem; border-radius: 50px; border: 1px solid var(--border-color); background: #fff; cursor: @(IsReadOnly ? "default" : "pointer"); font-size: 0.95rem; @(IsReadOnly && !Entry.SecondaryMoods.Contains(mood) ? "opacity: 0.5;" : "")">
+                        @GetMoodEmoji(mood) @mood
+                    </button>
+                }
+            }
+        </div>
+    </div>
+
+    @* Tags and Category *@
+    <div class="card">
+        <h3 style="margin-top: 0; font-size: 1.25rem;">Tags (optional)</h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">Add custom tags and quickly reuse common ones.</p>
+
+        <div class="tags-entry-row" style="display: @(IsReadOnly ? "none" : "flex"); gap: 0.5rem; margin-bottom: 1rem;">
+            <input class="tags-entry-input" type="text" @bind="newTag" @bind:event="oninput" @onkeyup="HandleTagKey" placeholder="Add custom tag..."
+                   style="flex: 1; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.9rem;" />
+            <button class="tags-entry-button" @onclick="AddTag" style="background: var(--bg-color); border: 1px solid var(--border-color); padding: 0 1rem; border-radius: var(--radius-sm); cursor: pointer;">
+                <i class="ph-bold ph-plus"></i>
+            </button>
+        </div>
+
+        @if (Entry.Tags.Any())
+        {
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem;">
+                @foreach (var tag in Entry.Tags)
+                {
+                    <span style="background: var(--accent-light); color: var(--accent); padding: 0.45rem 0.85rem; border-radius: 50px; font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                        #@tag
+                        @if (!IsReadOnly)
+                        {
+                            <i class="ph ph-x" style="cursor: pointer;" @onclick="() => Entry.Tags.Remove(tag)"></i>
+                        }
+                    </span>
+                }
+            </div>
+        }
+
+        @if (!IsReadOnly)
+        {
+            <div style="margin-bottom: 1.5rem;">
+                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 700; text-transform: uppercase;">Quick add:</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                    @foreach (var tag in PrebuiltTags)
+                    {
+                        <button @onclick="() => ToggleTag(tag)"
+                                style="padding: 0.45rem 0.9rem; border-radius: 50px; border: 1px solid var(--border-color); background: #fff; cursor: pointer; font-size: 0.9rem; color: var(--text-primary);">
+                            @tag
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+
+        <hr style="margin: 2rem 0; border: 0; border-top: 1px solid var(--border-color);" />
+
+        <h3 style="font-size: 1.25rem;">Category (optional)</h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">Keep entries organized by category.</p>
+
+        <select @bind="Entry.Category" disabled="@IsReadOnly" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 1rem; background: #fff; @(IsReadOnly ? "cursor: default; opacity: 1;" : "")">
+            <option value="">Select a category...</option>
+            @foreach (var catName in DisplayCategories)
+            {
+                <option value="@catName">@catName</option>
+            }
+        </select>
+    </div>
+
+    <div style="padding-bottom: 5rem;"></div>
+</div>
+
+<style>
+    .mood-btn:hover {
+        border-color: var(--accent) !important;
+        background: var(--bg-color) !important;
+    }
+
+    .active-positive {
+        background-color: var(--mood-positive) !important;
+        border-color: var(--mood-positive-text) !important;
+        color: var(--mood-positive-text) !important;
+    }
+
+    .active-neutral {
+        background-color: var(--mood-neutral) !important;
+        border-color: var(--mood-neutral-text) !important;
+        color: var(--mood-neutral-text) !important;
+    }
+
+    .active-negative {
+        background-color: var(--mood-negative) !important;
+        border-color: var(--mood-negative-text) !important;
+        color: var(--mood-negative-text) !important;
+    }
+
+    .active-secondary {
+        border-color: var(--accent) !important;
+        background: var(--accent-light) !important;
+        color: var(--accent) !important;
+        font-weight: 600;
+    }
+
+    .ql-container {
+        font-family: 'Outfit', sans-serif !important;
+        border: none !important;
+        font-size: 1.1rem !important;
+    }
+
+    .ql-toolbar {
+        border: none !important;
+        border-bottom: 1px solid var(--border-color) !important;
+        margin-bottom: 1rem;
+    }
+</style>
+
+@code {
+    [Parameter] public int EntryId { get; set; } = 0;
+
+    private JournalEntry Entry = new();
+    private List<string> DisplayCategories = new();
+    private DateTime EntryDate = DateTime.Now;
+    private string newTag = "";
+    private int WordCount = 0;
+
+    private bool IsReadOnly => Entry.Id != 0 && Entry.Date.Date != DateTime.Now.Date;
+
+    private Dictionary<string, List<string>> MoodCategories = new()
+    {
+        { "Positive", new List<string> { "Happy", "Excited", "Relaxed", "Grateful", "Confident" } },
+        { "Neutral", new List<string> { "Calm", "Thoughtful", "Curious", "Nostalgic", "Bored" } },
+        { "Negative", new List<string> { "Sad", "Angry", "Stressed", "Lonely", "Anxious" } }
+    };
+
+    private string[] PrebuiltTags = {
+        "Work", "Career", "Studies", "Family", "Friends", "Relationships",
+        "Health", "Fitness", "Personal Growth", "Self-care", "Hobbies", "Travel", "Nature",
+        "Finance", "Spirituality", "Birthday", "Holiday", "Vacation", "Celebration", "Exercise",
+        "Reading", "Writing", "Cooking", "Meditation", "Yoga", "Music", "Shopping", "Parenting",
+        "Projects", "Planning", "Reflection"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Security.CurrentUser == null) return;
+
+        var userId = Security.CurrentUser.Id;
+        var custom = await DB.GetCategoriesAsync(userId);
+        var defaults = new[] { "Personal", "Work", "Health", "Travel", "Fitness", "Self-care" };
+        DisplayCategories = defaults.Concat(custom.Select(c => c.Name)).Distinct().ToList();
+
+        if (EntryId != 0)
+        {
+            var existing = await DB.GetEntriesAsync(userId);
+            Entry = existing.FirstOrDefault(x => x.Id == EntryId) ?? new();
+            EntryDate = Entry.Date;
+            if (!string.IsNullOrEmpty(Entry.ContentRaw))
+            {
+                UpdateWordCount(Entry.ContentRaw);
+            }
+        }
+        else
+        {
+            
+            var todayEntry = await DB.GetEntryByDateAsync(DateTime.Now, userId);
+            if (todayEntry != null)
+            {
+                Entry = todayEntry;
+                EntryId = Entry.Id;
+                EntryDate = Entry.Date;
+                if (!string.IsNullOrEmpty(Entry.ContentRaw))
+                {
+                    UpdateWordCount(Entry.ContentRaw);
+                }
+            }
+            else
+            {
+                Entry = new JournalEntry { Date = DateTime.Now, UserId = userId };
+            }
+        }
+    }
+
+    private DotNetObjectReference<Write>? objRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                objRef = DotNetObjectReference.Create(this);
+                await JS.InvokeVoidAsync("initQuill", new object[] { "editor", Entry.Content, objRef, IsReadOnly });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Quill init skipped: {ex.Message}");
+            }
+        }
+    }
+
+    [JSInvokable]
+    public void UpdateWordCount(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            WordCount = 0;
+        }
+        else
+        {
+            WordCount = text.Split(new[] { ' ', '\r', '\n', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length;
+        }
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        objRef?.Dispose();
+    }
+
+    private void SetPrimaryMood(string mood) => Entry.PrimaryMood = mood;
+
+    private void ToggleSecondaryMood(string mood)
+    {
+        if (Entry.SecondaryMoods.Contains(mood))
+            Entry.SecondaryMoods.Remove(mood);
+        else if (Entry.SecondaryMoods.Count < 2)
+            Entry.SecondaryMoods.Add(mood);
+    }
+
+    private void AddTag()
+    {
+        if (!string.IsNullOrWhiteSpace(newTag) && !Entry.Tags.Contains(newTag))
+        {
+            Entry.Tags.Add(newTag.Trim());
+            newTag = "";
+        }
+    }
+
+    private void HandleTagKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") AddTag();
+    }
+
+    private void ToggleTag(string tag)
+    {
+        if (Entry.Tags.Contains(tag)) Entry.Tags.Remove(tag);
+        else Entry.Tags.Add(tag);
+    }
+
+    private async Task SaveEntry()
+    {
+        if (string.IsNullOrEmpty(Entry.PrimaryMood))
+        {
+            await JS.InvokeVoidAsync("showToast", new object[] { "Please select a primary mood.", "error" });
+            return;
+        }
+
+        // Get content from Quill
+        Entry.Content = await JS.InvokeAsync<string>("getQuillContent", new object[] { "editor" });
+        Entry.ContentRaw = await JS.InvokeAsync<string>("getQuillText", new object[] { "editor" });
+
+        await DB.SaveEntryAsync(Entry);
+        await JS.InvokeVoidAsync("showToast", new object[] { "Entry saved successfully!", "success" });
+
+        
+        await Task.Delay(800);
+        Nav.NavigateTo("/");
+    }
+
+    private string GetMoodEmoji(string mood)
+    {
+        return mood switch
+        {
+            "Happy" => "😊",
+            "Excited" => "🤩",
+            "Relaxed" => "😌",
+            "Grateful" => "🙏",
+            "Confident" => "💪",
+            "Calm" => "🍃",
+            "Thoughtful" => "🤔",
+            "Curious" => "🧐",
+            "Nostalgic" => "☁️",
+            "Bored" => "😑",
+            "Sad" => "😢",
+            "Angry" => "😡",
+            "Stressed" => "😫",
+            "Lonely" => "👤",
+            "Anxious" => "😰",
+            _ => "😶"
+        };
+    }
+}

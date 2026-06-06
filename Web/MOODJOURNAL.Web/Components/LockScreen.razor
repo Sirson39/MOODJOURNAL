@@ -1,0 +1,151 @@
+﻿@inject SecurityService Security
+
+@if (Security.IsLocked)
+{
+    <div class="lock-screen-shell">
+        <div class="card fade-in lock-screen-card">
+            <div class="lock-screen-header">
+                <div class="brand-icon lock-screen-icon">
+                    <i class="ph-fill ph-notebook"></i>
+                </div>
+                <h2 class="brand-font lock-screen-title">Welcome Back</h2>
+                <p class="lock-screen-subtitle">Your private thoughts, safely stored.</p>
+            </div>
+
+            <div class="lock-screen-toggle">
+                <button @onclick="() => SetMode(false)"
+                        class="@(!isRegisterMode ? "lock-screen-tab active" : "lock-screen-tab")">
+                    Login
+                </button>
+                <button @onclick="() => SetMode(true)"
+                        class="@(isRegisterMode ? "lock-screen-tab active" : "lock-screen-tab")">
+                    Register
+                </button>
+            </div>
+
+            <div class="lock-screen-form">
+                <div>
+                    <label class="lock-screen-label">Username</label>
+                    <div class="lock-screen-input-wrap">
+                        <i class="ph ph-user lock-screen-input-icon"></i>
+                        @if (isRegisterMode)
+                        {
+                            <input type="text" @bind="registerUsername" placeholder="Create username"
+                                   class="lock-screen-input" />
+                        }
+                        else
+                        {
+                            <input type="text" @bind="loginUsername" placeholder="Enter username"
+                                   class="lock-screen-input" />
+                        }
+                    </div>
+                </div>
+
+                <div>
+                    <label class="lock-screen-label">Password / PIN</label>
+                    <div class="lock-screen-input-wrap">
+                        <i class="ph ph-lock lock-screen-input-icon"></i>
+                        @if (isRegisterMode)
+                        {
+                            <input type="password" @bind="registerPin" placeholder="Create PIN or password"
+                                   class="lock-screen-input" />
+                        }
+                        else
+                        {
+                            <input type="password" @bind="loginPin" placeholder="••••"
+                                   class="lock-screen-input" />
+                        }
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="lock-screen-error">
+                        @errorMessage
+                    </div>
+                }
+
+                <button class="btn-primary lock-screen-action"
+                        @onclick="HandleAuth">
+                    @(isRegisterMode ? "Create Account" : "Unlock Journal")
+                </button>
+            </div>
+
+            <p class="lock-screen-footer">
+                <i class="ph ph-shield-check" style="vertical-align: middle;"></i> Secure, Local Storage
+            </p>
+        </div>
+    </div>
+}
+
+@code {
+    private string loginUsername = "";
+    private string loginPin = "";
+    private string registerUsername = "";
+    private string registerPin = "";
+
+    private string errorMessage = "";
+    private bool isRegisterMode = false;
+
+    [Parameter] public EventCallback OnUnlocked { get; set; }
+
+    private void SetMode(bool register)
+    {
+        isRegisterMode = register;
+        errorMessage = "";
+
+        loginUsername = "";
+        loginPin = "";
+        registerUsername = "";
+        registerPin = "";
+    }
+
+    private async Task HandleAuth()
+    {
+        try
+        {
+            string username = isRegisterMode ? registerUsername : loginUsername;
+            string pin = isRegisterMode ? registerPin : loginPin;
+
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(pin))
+            {
+                errorMessage = "Please enter both username and password.";
+                return;
+            }
+
+            bool success;
+            if (isRegisterMode)
+            {
+                success = await Security.Register(username, pin);
+                if (!success)
+                {
+                    errorMessage = "Username already exists.";
+                    return;
+                }
+            }
+            else
+            {
+                success = await Security.Login(username, pin);
+                if (!success)
+                {
+                    errorMessage = "Invalid username or password.";
+                    return;
+                }
+            }
+
+            if (success)
+            {
+                errorMessage = "";
+                loginUsername = "";
+                loginPin = "";
+                registerUsername = "";
+                registerPin = "";
+                await OnUnlocked.InvokeAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "System Error: " + ex.Message;
+        }
+    }
+}

@@ -1,0 +1,253 @@
+﻿@page "/timeline"
+@using MOODJOURNAL.Models
+@using MOODJOURNAL.Services
+@inject DatabaseService DB
+@inject SecurityService Security
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<div class="fade-in timeline-page">
+    <div class="content-header">
+        <div>
+            <h2>Timeline</h2>
+            <p style="color: var(--text-secondary);">Browse, search, and filter your past entries.</p>
+        </div>
+        <div class="timeline-toolbar">
+            <div class="timeline-search-wrap" style="position: relative;">
+                <i class="ph ph-magnifying-glass" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary);"></i>
+                <input class="timeline-search-input" type="text" @bind="SearchQuery" @bind:event="oninput" @onkeyup="HandleSearch" placeholder="Search title or content..."
+                       style="padding: 0.75rem 1rem 0.75rem 2.5rem; border: 1px solid var(--border-color); border-radius: 50px; font-size: 0.9rem; width: 300px;" />
+            </div>
+            <button class="btn-primary" @onclick="ToggleFilters" style="background: var(--bg-color); color: var(--text-primary); border: 1px solid var(--border-color);">
+                <i class="ph ph-funnel"></i> Filters @(ActiveFiltersCount > 0 ? $"({ActiveFiltersCount})" : "")
+            </button>
+        </div>
+    </div>
+
+    @if (ShowFilters)
+    {
+        <div class="card timeline-filters-card" style="margin-bottom: 2rem; background: var(--bg-color); border: 1px dashed var(--border-color);">
+            <div class="timeline-filters-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;">
+                <div class="timeline-date-range">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.5rem;">DATE RANGE</label>
+                    <div class="timeline-date-range-row" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input class="timeline-date-input" type="date" @bind="StartDate" style="flex: 1; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border-color);" />
+                        <span>to</span>
+                        <input class="timeline-date-input" type="date" @bind="EndDate" style="flex: 1; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border-color);" />
+                    </div>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.5rem;">PRIMARY MOOD</label>
+                    <select @bind="FilterMood" style="width: 100%; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <option value="">Any Mood</option>
+                        <option value="Happy">Happy</option>
+                        <option value="Excited">Excited</option>
+                        <option value="Calm">Calm</option>
+                        <option value="Sad">Sad</option>
+                        <option value="Angry">Angry</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.5rem;">CATEGORY</label>
+                    <select @bind="FilterCategory" style="width: 100%; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <option value="">Any Category</option>
+                        <option value="Personal">Personal</option>
+                        <option value="Work">Work</option>
+                        <option value="Health">Health</option>
+                    </select>
+                </div>
+            </div>
+            <div class="timeline-filter-actions" style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+                <button @onclick="ClearFilters" style="background: transparent; border: none; font-weight: 600; color: var(--text-secondary); cursor: pointer;">Clear All</button>
+                <button @onclick="ApplyFilters" class="btn-primary" style="padding: 0.5rem 1.5rem;">Apply Filters</button>
+            </div>
+        </div>
+    }
+
+    @if (PaginatedEntries.Any())
+    {
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            @foreach (var entry in PaginatedEntries)
+            {
+                <div class="card" @onclick='() => Nav.NavigateTo($"/write/{entry.Id}")' style="cursor: pointer; padding: 2rem; position: relative; overflow: hidden; transition: transform 0.2s;">
+                    <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 6px;" class="bg-@(GetMoodGroup(entry.PrimaryMood))"></div>
+
+                    <button @onclick="() => DeleteEntry(entry)" @onclick:stopPropagation="true"
+                            style="position: absolute; bottom: 1.5rem; right: 1.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10;"
+                            onmouseover="this.style.background='var(--mood-negative)'; this.style.color='var(--mood-negative-text)'"
+                            onmouseout="this.style.background='transparent'; this.style.color='var(--text-secondary)'">
+                        <i class="ph ph-trash" style="font-size: 1.25rem;"></i>
+                    </button>
+
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                        <div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 0.25rem;">
+                                @entry.Date.ToString("dddd, MMMM dd, yyyy")
+                            </div>
+                            <h3 style="margin: 0; font-size: 1.5rem;">@entry.Title</h3>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem;">
+                            <span class="mood-badge @GetMoodClass(entry.PrimaryMood)">
+                                @entry.PrimaryMood
+                            </span>
+                            @if (!string.IsNullOrEmpty(entry.Category))
+                            {
+                                <span style="font-size: 0.7rem; background: var(--border-color); padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 700; color: var(--text-secondary);">
+                                    @entry.Category.ToUpper()
+                                </span>
+                            }
+                        </div>
+                    </div>
+
+                    <div style="color: var(--text-secondary); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 1.5rem;">
+                        @((MarkupString)entry.Content)
+                    </div>
+
+                    @if (entry.Tags.Any())
+                    {
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                            @foreach (var tag in entry.Tags)
+                            {
+                                <span style="font-size: 0.8rem; color: var(--accent); font-weight: 600;">#@tag</span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        
+        <div style="display: flex; justify-content: center; align-items: center; gap: 2rem; margin-top: 3rem; padding-bottom: 5rem;">
+            <button class="btn-primary" disabled="@(CurrentPage == 1)" @onclick="PrevPage" style="background: var(--card-bg); color: var(--text-primary); border: 1px solid var(--border-color);">
+                <i class="ph ph-caret-left"></i> Previous
+            </button>
+            <span style="font-weight: 600;">Page @CurrentPage of @TotalPages</span>
+            <button class="btn-primary" disabled="@(CurrentPage == TotalPages)" @onclick="NextPage" style="background: var(--card-bg); color: var(--text-primary); border: 1px solid var(--border-color);">
+                Next <i class="ph ph-caret-right"></i>
+            </button>
+        </div>
+    }
+    else
+    {
+        <div style="text-align: center; padding: 5rem 2rem; opacity: 0.5;">
+            <i class="ph ph-files" style="font-size: 4rem; margin-bottom: 1rem;"></i>
+            <h3>No entries found</h3>
+            <p>Try adjusting your search or filters.</p>
+        </div>
+    }
+</div>
+
+<style>
+    .bg-positive {
+        background-color: var(--mood-positive-text);
+    }
+
+    .bg-neutral {
+        background-color: var(--mood-neutral-text);
+    }
+
+    .bg-negative {
+        background-color: var(--mood-negative-text);
+    }
+
+    .card:hover {
+        transform: translateY(-3px);
+    }
+</style>
+
+@code {
+    private List<JournalEntry> AllEntries = new();
+    private List<JournalEntry> FilteredEntries = new();
+    private string SearchQuery = "";
+    private bool ShowFilters = false;
+
+    
+    private DateTime? StartDate;
+    private DateTime? EndDate;
+    private string FilterMood = "";
+    private string FilterCategory = "";
+    private int ActiveFiltersCount = 0;
+
+    
+    private int CurrentPage = 1;
+    private int PageSize = 5;
+    private int TotalPages => (int)Math.Ceiling((double)FilteredEntries.Count / PageSize);
+    private IEnumerable<JournalEntry> PaginatedEntries => FilteredEntries.Skip((CurrentPage - 1) * PageSize).Take(PageSize);
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Security.CurrentUser == null) return;
+        AllEntries = await DB.GetEntriesAsync(Security.CurrentUser.Id);
+        ApplyFilters();
+    }
+
+    private void HandleSearch(KeyboardEventArgs e)
+    {
+        ApplyFilters();
+    }
+
+    private void ToggleFilters() => ShowFilters = !ShowFilters;
+
+    private void ApplyFilters()
+    {
+        var filtered = AllEntries.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(SearchQuery))
+        {
+            filtered = filtered.Where(x => x.Title.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ||
+                                           x.ContentRaw.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
+        }
+
+        ActiveFiltersCount = 0;
+        if (StartDate.HasValue) { filtered = filtered.Where(x => x.Date >= StartDate.Value); ActiveFiltersCount++; }
+        if (EndDate.HasValue) { filtered = filtered.Where(x => x.Date <= EndDate.Value); ActiveFiltersCount++; }
+        if (!string.IsNullOrEmpty(FilterMood)) { filtered = filtered.Where(x => x.PrimaryMood == FilterMood); ActiveFiltersCount++; }
+        if (!string.IsNullOrEmpty(FilterCategory)) { filtered = filtered.Where(x => x.Category == FilterCategory); ActiveFiltersCount++; }
+
+        FilteredEntries = filtered.ToList();
+        CurrentPage = 1;
+    }
+
+    private async Task DeleteEntry(JournalEntry entry)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("customConfirm", new object[] {
+            "Delete Entry?",
+            $"Are you sure you want to remove '{entry.Title}'? This action cannot be undone.",
+            "Delete",
+            "🗑️"
+        });
+
+        if (confirmed)
+        {
+            await DB.DeleteEntryAsync(entry);
+            AllEntries.Remove(entry);
+            ApplyFilters();
+            await JS.InvokeVoidAsync("showToast", new object[] { "Entry removed successfully", "success" });
+            StateHasChanged();
+        }
+    }
+
+    private void ClearFilters()
+    {
+        SearchQuery = "";
+        StartDate = null;
+        EndDate = null;
+        FilterMood = "";
+        FilterCategory = "";
+        ApplyFilters();
+    }
+
+    private void PrevPage() { if (CurrentPage > 1) CurrentPage--; }
+    private void NextPage() { if (CurrentPage < TotalPages) CurrentPage++; }
+
+    private string GetMoodGroup(string mood)
+    {
+        var positive = new[] { "Happy", "Excited", "Relaxed", "Grateful", "Confident" };
+        var neutral = new[] { "Calm", "Thoughtful", "Curious", "Nostalgic", "Bored" };
+        if (positive.Contains(mood)) return "positive";
+        if (neutral.Contains(mood)) return "neutral";
+        return "negative";
+    }
+
+    private string GetMoodClass(string mood) => "mood-" + GetMoodGroup(mood);
+}

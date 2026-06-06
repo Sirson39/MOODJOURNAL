@@ -1,0 +1,175 @@
+﻿@page "/analytics"
+@using MOODJOURNAL.Models
+@using MOODJOURNAL.Services
+@inject DatabaseService DB
+@inject SecurityService Security
+@inject IJSRuntime JS
+
+<div class="fade-in">
+    <div class="content-header">
+        <div>
+            <h2>Analytics & Insights</h2>
+            <p style="color: var(--text-secondary);">Visualize your journaling patterns and mood trends.</p>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        @* // Mood Distribution *@
+        <div class="card">
+            <h3 style="margin-top: 0; font-size: 1.1rem;">Mood Distribution</h3>
+            <canvas id="moodChart" style="max-height: 250px;"></canvas>
+
+            <div style="margin-top: 1.5rem;">
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem; text-transform: uppercase; font-weight: 700;">
+                    Top Mood
+                </p>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span style="font-size: 2rem;">@TopMoodEmoji</span>
+                    <div>
+                        <div style="font-weight: 700; font-size: 1.1rem;">@TopMood</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary);">@TopMoodCount entries</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* Word Count Trend  *@
+        <div class="card span-2">
+            <h3 style="margin-top: 0; font-size: 1.1rem;">Word Count Trends</h3>
+            <canvas id="wordChart" style="max-height: 350px;"></canvas>
+        </div>
+
+        @* Tag Breakdown *@
+        <div class="card span-2">
+            <h3 style="margin-top: 0; font-size: 1.1rem;">Tag Breakdown</h3>
+            <canvas id="tagChart" style="max-height: 300px;"></canvas>
+        </div>
+
+        @* Fun Stats *@
+        <div class="card">
+            <h3 style="margin-top: 0; font-size: 1.1rem;">Journaling Stats</h3>
+            <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-top: 1rem;">
+                <div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 700;">TOTAL WORDS</div>
+                    <div style="font-size: 1.5rem; font-weight: 700;">@TotalWords.ToString("N0")</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 700;">
+                        AVG WORDS PER ENTRY
+                    </div>
+                    <div style="font-size: 1.5rem; font-weight: 700;">@AvgWords</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 700;">
+                        MOST ACTIVE
+                        CATEGORY
+                    </div>
+                    <div style="font-size: 1.5rem; font-weight: 700;">@TopCategory</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="padding-bottom: 5rem;"></div>
+</div>
+
+@code {
+    // Data loaded from database for the logged-in user
+    private List<JournalEntry> Entries = new();
+    private string TopMood = "N/A";
+    private string TopMoodEmoji = "😶";
+    private int TopMoodCount = 0;
+    private long TotalWords = 0;
+    private int AvgWords = 0;
+    private string TopCategory = "None";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // If not logged in, don't load analytics
+        if (Security.CurrentUser == null) return;
+        Entries = await DB.GetEntriesAsync(Security.CurrentUser.Id);
+
+        if (Entries.Any())
+        {
+            var moodGroups = Entries.GroupBy(x => x.PrimaryMood).OrderByDescending(g => g.Count());
+            var top = moodGroups.First();
+            TopMood = top.Key;
+            TopMoodCount = top.Count();
+            TopMoodEmoji = GetMoodEmoji(TopMood);
+
+
+            // Total words across all entries
+            TotalWords = Entries.Sum(x => x.ContentRaw.Split(new[] { ' ', '\n', '\r' },
+            StringSplitOptions.RemoveEmptyEntries).Length);
+            AvgWords = (int)(TotalWords / Entries.Count);
+
+            var catGroup = Entries.Where(x => !string.IsNullOrEmpty(x.Category)).GroupBy(x => x.Category).OrderByDescending(g =>
+            g.Count());
+            TopCategory = catGroup.Any() ? catGroup.First().Key : "None";
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && Entries.Any())
+        {
+            try
+            {
+                // Prepare data for Mood Chart
+                var positive = new[] { "Happy", "Excited", "Relaxed", "Grateful", "Confident" };
+                var neutral = new[] { "Calm", "Thoughtful", "Curious", "Nostalgic", "Bored" };
+
+                var posCount = Entries.Count(e => positive.Contains(e.PrimaryMood));
+                var neuCount = Entries.Count(e => neutral.Contains(e.PrimaryMood));
+                var negCount = Entries.Count - posCount - neuCount;
+
+                await JS.InvokeVoidAsync("createPieChart", new object[] { "moodChart",
+                    new[] { "Positive", "Neutral", "Negative" },
+                    new[] { posCount, neuCount, negCount },
+                    new[] { "#E3F2E1", "#E1F0F2", "#F2E1E1" }
+                });
+
+                // Word Count Chart (Last 10 entries)
+                var last10 = Entries.OrderBy(x => x.Date).TakeLast(10).ToList();
+                var lineLabels = last10.Select(x => x.Date.ToString("MMM dd")).ToArray();
+                var lineData = last10.Select(x => x.ContentRaw.Split(new[] { ' ', '\n', '\r' },
+                    StringSplitOptions.RemoveEmptyEntries).Length).ToArray();
+                await JS.InvokeVoidAsync("createLineChart", new object[] { "wordChart", lineLabels, lineData });
+
+                // Tag Breakdown
+                var tags = Entries.SelectMany(x => x.Tags).GroupBy(x => x).OrderByDescending(g => g.Count()).Take(8).ToList();
+                await JS.InvokeVoidAsync("createBarChart", new object[] { "tagChart",
+                    tags.Select(g => g.Key).ToArray(),
+                    tags.Select(g => g.Count()).ToArray()
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Analytics chart render skipped: {ex.Message}");
+            }
+        }
+    }
+
+    private string GetMoodEmoji(string mood)
+    {
+        return mood switch
+        {
+            "Happy" => "😊",
+            "Excited" => "🤩",
+            "Relaxed" => "😌",
+            "Grateful" => "🙏",
+            "Confident" => "💪",
+            "Calm" => "🍃",
+            "Thoughtful" => "🤔",
+            "Curious" => "🧐",
+            "Nostalgic" => "☁️",
+            "Bored" => "😑",
+            "Sad" => "😢",
+            "Angry" => "😡",
+            "Stressed" => "😫",
+            "Lonely" => "👤",
+            "Anxious" => "😰",
+            _ => "😶"
+        };
+    }
+}

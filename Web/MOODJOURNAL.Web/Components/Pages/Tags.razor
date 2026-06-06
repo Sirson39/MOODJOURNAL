@@ -1,0 +1,170 @@
+﻿@page "/tags"
+@using MOODJOURNAL.Models
+@using MOODJOURNAL.Services
+@inject DatabaseService DB
+@inject SecurityService Security
+
+<div class="fade-in tags-page">
+    <div class="content-header">
+        <div>
+            <h2>Tags & Categories</h2>
+            <p style="color: var(--text-secondary);">Manage your custom labels and organized categories.</p>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        @* Tags Card *@
+        <div class="card span-2">
+            <h3 style="margin-top: 0;">Your Tags</h3>
+            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 2rem;">A complete list of all tags you've used in your journal.</p>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+                @if (AllTags.Any())
+                {
+                    @foreach (var tag in AllTags)
+                    {
+                        <div style="background: var(--accent-light); color: var(--accent); padding: 0.6rem 1.25rem; border-radius: 50px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; border: 1px solid rgba(196, 98, 16, 0.1);">
+                            #@tag.Name
+                            <span style="font-size: 0.7rem; opacity: 0.6; background: rgba(196, 98, 16, 0.1); padding: 0.1rem 0.4rem; border-radius: 4px;">@tag.Count</span>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p>No tags used yet.</p>
+                }
+            </div>
+        </div>
+
+        @* Categories Card *@
+        <div class="card">
+            <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center;">
+                Categories
+                <small style="font-size: 0.7rem; color: var(--text-secondary); font-weight: 400;">Manage & Organize</small>
+            </h3>
+
+            @*  Add Category UI *@
+            <div class="category-add-row" style="display: flex; gap: 0.5rem; margin-bottom: 2rem;">
+                <input class="category-add-input" type="text" @bind="newCategoryName" placeholder="New category name..."
+                       style="flex: 1; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.9rem;" />
+                <button class="btn-primary category-add-button" style="padding: 0.75rem 1rem;" @onclick="AddCategory">
+                    <i class="ph ph-plus"></i>
+                </button>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                @foreach (var catName in DefaultCategoryNames)
+                {
+                    var stats = CategoryStats.FirstOrDefault(s => s.Name == catName);
+                    if (stats != null && stats.Count > 0)
+                    {
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.85rem; background: var(--bg-color); border-radius: 12px; border: 1px solid var(--border-color); opacity: 0.8;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <i class="ph-fill ph-folder" style="color: var(--accent);"></i>
+                                <span style="font-weight: 600;">@catName</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="font-size: 0.85rem; font-weight: 700; opacity: 0.6;">@stats.Count</span>
+                            </div>
+                        </div>
+                    }
+                }
+
+                @foreach (var cat in CustomCategories.Where(c => !DefaultCategoryNames.Contains(c.Name)))
+                {
+                    var stats = CategoryStats.FirstOrDefault(s => s.Name == cat.Name);
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.85rem; background: var(--bg-color); border-radius: 12px; border: 1px solid transparent; transition: all 0.2s;" class="hover-card">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <i class="ph-fill ph-folder" style="color: var(--accent);"></i>
+                            <span style="font-weight: 600;">@cat.Name</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <span style="font-size: 0.85rem; font-weight: 700; opacity: 0.6;">@(stats?.Count ?? 0)</span>
+                            <button @onclick="() => DeleteCategory(cat)" style="background: none; border: none; color: var(--mood-negative); cursor: pointer; padding: 4px; border-radius: 4px;" title="Delete Category">
+                                <i class="ph ph-trash" style="font-size: 1.1rem;"></i>
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+    private List<LabelStat> AllTags = new();
+    private List<Category> CustomCategories = new();
+    private List<LabelStat> CategoryStats = new();
+    private string newCategoryName = "";
+
+    private readonly string[] DefaultCategoryNames = new[] {
+        "Personal", "Work", "Health", "Travel", "Fitness", "Self-care"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        if (Security.CurrentUser == null) return;
+        var userId = Security.CurrentUser.Id;
+        var entries = await DB.GetEntriesAsync(userId);
+        CustomCategories = await DB.GetCategoriesAsync(userId);
+
+        AllTags = entries.SelectMany(x => x.Tags)
+                         .GroupBy(x => x)
+                         .Select(g => new LabelStat { Name = g.Key, Count = g.Count() })
+                         .OrderByDescending(x => x.Count)
+                         .ToList();
+
+        CategoryStats = entries.Where(x => !string.IsNullOrEmpty(x.Category))
+                            .GroupBy(x => x.Category)
+                            .Select(g => new LabelStat { Name = g.Key, Count = g.Count() })
+                            .ToList();
+    }
+
+    private async Task AddCategory()
+    {
+        if (string.IsNullOrWhiteSpace(newCategoryName)) return;
+
+        var name = newCategoryName.Trim();
+        if (DefaultCategoryNames.Any(n => n.Equals(name, StringComparison.OrdinalIgnoreCase)) ||
+            CustomCategories.Any(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+        {
+            await JS.InvokeVoidAsync("showToast", new object[] { "Category already exists.", "error" });
+            return;
+        }
+
+        var newCat = new Category { Name = name, UserId = Security.CurrentUser!.Id };
+        await DB.SaveCategoryAsync(newCat);
+        newCategoryName = "";
+        await LoadData();
+        await JS.InvokeVoidAsync("showToast", new object[] { "Category added!", "success" });
+    }
+
+    private async Task DeleteCategory(Category category)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("customConfirm", new object[] {
+            "Delete Category?",
+            $"Remove '{category.Name}'? This won't delete your entries, but they will be 'Uncategorized'.",
+            "Delete",
+            "📁"
+        });
+
+        if (confirmed)
+        {
+            await DB.DeleteCategoryAsync(category);
+            await LoadData();
+            await JS.InvokeVoidAsync("showToast", new object[] { "Category removed", "success" });
+        }
+    }
+
+    public class LabelStat
+    {
+        public string Name { get; set; } = "";
+        public int Count { get; set; }
+    }
+}

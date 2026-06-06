@@ -1,0 +1,132 @@
+@page "/calendar"
+@using MOODJOURNAL.Models
+@using MOODJOURNAL.Services
+@inject DatabaseService DB
+@inject SecurityService Security
+@inject NavigationManager Nav
+
+<div class="fade-in calendar-page">
+    <div class="content-header">
+        <div>
+            <h2>Calendar</h2>
+            <p style="color: var(--text-secondary);">Click a day to open or create that day's entry.</p>
+        </div>
+        <div class="calendar-toolbar">
+            <button class="btn-primary"
+                    style="background: var(--bg-color); color: var(--text-primary); border: 1px solid var(--border-color);"
+                    @onclick="PrevMonth">
+                <i class="ph ph-arrow-left"></i> Prev
+            </button>
+            <div class="card calendar-month-label"
+                 style="margin: 0; padding: 0.5rem 1.5rem; font-weight: 700; background: var(--accent-light); color: var(--accent);">
+                @CurrentMonth.ToString("MMMM yyyy")
+            </div>
+            <button class="btn-primary"
+                    style="background: var(--bg-color); color: var(--text-primary); border: 1px solid var(--border-color);"
+                    @onclick="NextMonth">
+                Next <i class="ph ph-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="card calendar-shell" style="padding: 2rem;">
+        <div class="calendar-grid calendar-weekdays"
+             style="margin-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+            @foreach (var day in DaysOfWeek)
+            {
+                <div style="text-align: center; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">
+                    @day
+                </div>
+            }
+        </div>
+
+        <div class="calendar-grid calendar-days">
+            @for (int i = 0; i < Offset; i++)
+            {
+                <div style="opacity: 0.3;"></div>
+            }
+
+            @foreach (var day in DaysInMonth)
+            {
+                var entry = GetEntryForDay(day);
+                <div class="calendar-day @(day.Date == DateTime.Today ? "today" : "")" @onclick="() => NavigateToDay(day)">
+                    <div class="calendar-day-date">@day.Day</div>
+
+                    @if (entry != null)
+                    {
+                        <div class="calendar-day-meta">
+                            <span class="calendar-entry-pill">Entry</span>
+                            <span class="mood-badge @GetMoodClass(entry.PrimaryMood)"
+                                  style="font-size: 0.6rem; padding: 0.1rem 0.4rem;">
+                                @entry.PrimaryMood
+                            </span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="calendar-empty-state">No entry</div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private DateTime CurrentMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+    private string[] DaysOfWeek = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+    private List<JournalEntry> Entries = new();
+
+    private int Offset => (int)CurrentMonth.DayOfWeek;
+    private IEnumerable<DateTime> DaysInMonth => Enumerable.Range(0, DateTime.DaysInMonth(CurrentMonth.Year,
+    CurrentMonth.Month))
+    .Select(day => CurrentMonth.AddDays(day));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEntries();
+    }
+
+    private async Task LoadEntries()
+    {
+        if (Security.CurrentUser == null) return;
+        var start = CurrentMonth;
+        var end = CurrentMonth.AddMonths(1).AddDays(-1);
+        Entries = await DB.GetEntriesInDateRangeAsync(start, end, Security.CurrentUser.Id);
+    }
+
+    private JournalEntry? GetEntryForDay(DateTime day) => Entries.FirstOrDefault(e => e.Date.Date == day.Date);
+
+    private async Task PrevMonth()
+    {
+        CurrentMonth = CurrentMonth.AddMonths(-1);
+        await LoadEntries();
+    }
+
+    private async Task NextMonth()
+    {
+        CurrentMonth = CurrentMonth.AddMonths(1);
+        await LoadEntries();
+    }
+
+    private void NavigateToDay(DateTime day)
+    {
+        var entry = GetEntryForDay(day);
+        if (entry != null)
+            Nav.NavigateTo($"/write/{entry.Id}");
+        else if (day.Date == DateTime.Today)
+            Nav.NavigateTo("/write");
+        else if (day.Date < DateTime.Today)
+            Nav.NavigateTo("/write");
+    }
+
+    private string GetMoodClass(string mood)
+    {
+        var positive = new[] { "Happy", "Excited", "Relaxed", "Grateful", "Confident" };
+        var neutral = new[] { "Calm", "Thoughtful", "Curious", "Nostalgic", "Bored" };
+
+        if (positive.Contains(mood)) return "mood-positive";
+        if (neutral.Contains(mood)) return "mood-neutral";
+        return "mood-negative";
+    }
+}

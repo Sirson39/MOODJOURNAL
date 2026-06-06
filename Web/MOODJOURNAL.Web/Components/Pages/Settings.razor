@@ -1,0 +1,199 @@
+@page "/settings"
+@using MOODJOURNAL.Models
+@using MOODJOURNAL.Services
+@inject DatabaseService DB
+@inject SecurityService Security
+@inject ExportService Exporter
+@inject IJSRuntime JS
+
+<div class="fade-in settings-page" style="max-width: 800px; margin: 0 auto;">
+    <div class="content-header">
+        <h2>Settings</h2>
+    </div>
+
+    @* Security Section *@
+    <div class="card">
+        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 0.75rem;">
+            <i class="ph ph-lock" style="color: var(--accent);"></i>
+            Security & Privacy
+        </h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem;">
+            Manage your PIN and app locking
+            preferences.
+        </p>
+
+        <div class="settings-security-block" style="max-width: 400px;">
+            <label style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.75rem;">
+                CURRENT
+                PIN
+            </label>
+            <div class="settings-pin-row" style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                <input class="settings-pin-input" type="password" @bind="currentPinInput" placeholder="Enter current PIN"
+                       style="flex: 1; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 8px;" />
+            </div>
+
+            <label style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.75rem;">NEW PIN</label>
+            <div class="settings-pin-row settings-pin-row-action" style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                <input class="settings-pin-input" type="password" @bind="newPinInput" placeholder="Enter new PIN"
+                       style="flex: 1; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 8px;" />
+                <button class="btn-primary settings-pin-button" @onclick="UpdatePin">Update PIN</button>
+            </div>
+        </div>
+    </div>
+
+    @* Theme Customization *@
+    <div class="card">
+        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 0.75rem;">
+            <i class="ph ph-palette" style="color: var(--accent);"></i>
+            Theme Customization
+        </h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+            Choose a look that suits you.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+            <button @onclick='() => SetTheme("light")'
+                    style="display: flex; align-items: center; justify-content: center; gap: 1rem; padding: 1.5rem; border-radius: 12px; border: 2px solid @(CurrentTheme == "light" ? "var(--accent)" : "var(--border-color)"); background: white; cursor: pointer;">
+                <i class="ph ph-sun" style="font-size: 1.5rem;"></i>
+                <div style="text-align: left;">
+                    <div style="font-weight: 700;">Light Mode</div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Classic beige & orange</div>
+                </div>
+            </button>
+            <button @onclick='() => SetTheme("dark")'
+                    style="display: flex; align-items: center; justify-content: center; gap: 1rem; padding: 1.5rem; border-radius: 12px; border: 2px solid @(CurrentTheme == "dark" ? "var(--accent)" : "var(--border-color)"); background: #1A1816; color: white; cursor: pointer;">
+                <i class="ph ph-moon" style="font-size: 1.5rem;"></i>
+                <div style="text-align: left;">
+                    <div style="font-weight: 700;">Dark Mode</div>
+                    <div style="font-size: 0.75rem; color: #A0978E;">Sleek night theme</div>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    @*  Export Section *@
+    <div class="card" style="border: 2px solid var(--accent-light);">
+        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 0.75rem;">
+            <i class="ph ph-export" style="color: var(--accent);"></i>
+            Export Journals
+        </h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem;">
+            Save your entries as a PDF
+            document for safekeeping.
+        </p>
+
+        <div class="export-range-row" style="display: flex; align-items: flex-end; gap: 1rem;">
+            <div>
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.5rem;">
+                    START
+                    DATE
+                </label>
+                <input class="export-date-input" type="date" @bind="exportStart"
+                       style="padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);" />
+            </div>
+            <div>
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.5rem;">
+                    END
+                    DATE
+                </label>
+                <input class="export-date-input" type="date" @bind="exportEnd"
+                       style="padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);" />
+            </div>
+            <button class="btn-primary" style="height: 3rem;" @onclick="ExportPdf">
+                <i class="ph ph-file-pdf"></i> Generate PDF
+            </button>
+        </div>
+    </div>
+
+    @* Logout Section*@
+    <div class="card" style="border: 1px solid var(--mood-negative);">
+        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 0.75rem;">
+            <i class="ph ph-sign-out" style="color: var(--mood-negative-text);"></i>
+            Account
+        </h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+            Securely lock your journal
+            and return to the lock screen.
+        </p>
+        <button class="btn-primary"
+                style="background: var(--mood-negative); color: var(--mood-negative-text); border: none; width: fit-content;"
+                @onclick="Logout">
+            <i class="ph ph-lock"></i> Logout & Lock
+        </button>
+    </div>
+
+    <div style="padding-bottom: 5rem;"></div>
+</div>
+
+@code {
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private string currentPinInput = "";
+    private string newPinInput = "";
+    private string CurrentTheme = "light";
+    private DateTime exportStart = DateTime.Now.AddMonths(-1);
+    private DateTime exportEnd = DateTime.Now;
+
+    private void Logout()
+    {
+        Security.Lock();
+        Nav.NavigateTo("/");
+    }
+
+    private async Task UpdatePin()
+    {
+        if (Security.CurrentUser == null) return;
+
+        if (newPinInput.Length >= 4)
+        {
+            var updated = await Security.ChangePinAsync(currentPinInput, newPinInput);
+            if (updated)
+            {
+                await JS.InvokeVoidAsync("showToast", new object[] { "PIN updated successfully!", "success" });
+                currentPinInput = "";
+                newPinInput = "";
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("showToast", new object[] { "Current PIN is incorrect.", "error" });
+            }
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("showToast", new object[] { "PIN must be at least 4 digits.", "error" });
+        }
+    }
+
+    private async Task SetTheme(string theme)
+    {
+        CurrentTheme = theme;
+        await JS.InvokeVoidAsync("document.documentElement.setAttribute", new object[] { "data-theme", theme });
+    }
+
+    private async Task ExportPdf()
+    {
+        try
+        {
+            if (Security.CurrentUser == null) return;
+            var entries = await DB.GetEntriesInDateRangeAsync(exportStart, exportEnd, Security.CurrentUser.Id);
+            if (!entries.Any())
+            {
+                await JS.InvokeVoidAsync("showToast", new object[] { "No entries found in this date range.", "error" });
+                return;
+            }
+
+            var rangeStr = $"{exportStart:MMM dd, yyyy} - {exportEnd:MMM dd, yyyy}";
+            var pdfBytes = Exporter.GeneratePdf(entries, rangeStr);
+
+            var fileName = $"MoodJournal_Export_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+            var base64 = Convert.ToBase64String(pdfBytes);
+            await JS.InvokeVoidAsync("downloadFile", fileName, base64, "application/pdf");
+
+            await JS.InvokeVoidAsync("showToast", new object[] { "Export successful! Your PDF download should start now.", "success" });
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("showToast", new object[] { "Error exporting PDF: " + ex.Message, "error" });
+        }
+    }
+}
