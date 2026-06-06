@@ -1,0 +1,9 @@
+bin/
+obj/
+.vs/
+.git/
+publish/
+Web/**/bin/
+Web/**/obj/
+**/*.user
+**/*.suo
